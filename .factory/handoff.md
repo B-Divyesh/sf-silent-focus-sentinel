@@ -50,9 +50,10 @@ silent-focus-sentinel record-xctest --scheme CheckoutUITests --project Checkout.
 - `cargo package --allow-dirty`: passed (13 files; 43.5 KiB unpacked / 13.1 KiB compressed). A fresh-prefix `cargo install --path target/package/silent-focus-sentinel-0.1.0 --root <temp> --locked` passed and its installed `demo` generated JSON and HTML reports.
 - Production site assets: JS 11.75 KB (4.59 KB gzip), CSS 11.64 KB (3.48 KB gzip), hashed font 13.28 KB, hero WebP 33.42 KB. All remain below the static budget.
 - A local Lighthouse desktop run reported performance/accessibility/best-practices scores of 100/100/100. Its Chrome target crashed while collecting the final screenshot, so SEO (92 on HTTP localhost) and its lab timing are not release evidence; browser/Axe tests and the previous live Lighthouse evidence remain the reliable checks here.
+- Deployment: `7fa09d7` was pushed to `main` and `dist/site/` deployed successfully to Azure Static Web Apps (`orange-plant-05a460110.7.azurestaticapps.net`) with the `silent-focus-sentinel.sociobot.in` custom domain Ready. Live SHA-256 matches local for `index.html` (`0f064546…fc5c`), `assets/index-xkn1SBol.js` (`28cb9ba8…21fd`), and the hashed font (`685bbbf6…130f`). The live font and JS both return `Cache-Control: public, max-age=31536000, immutable`; `/definitely-missing` returns HTTP 404 and the designed page text.
+- Live 390×844 browser smoke test: `/demo` returned 200 with title “Demo — Silent Focus Sentinel,” its intended heading, no console errors, a 44 px minimum visible control dimension, and the navy demo-bar focus outline.
 
 ### Known limits
 
 - This Linux worker cannot run Xcode or an iOS Simulator. The actual public-XCTest source and the binary’s marked-log capture path are shipped and tested with a deterministic Xcodebuild fixture; run the documented command on macOS against the target app before a physical-device release.
 - XCTest does not expose the private VoiceOver cursor. The app-owned UI test defines the intended swipe order explicitly, records accessible properties and expected spoken text, and does not claim WCAG conformance.
-- Deployment and live identity/HTTP-404 verification are completed after this repair commit is pushed to the static deployment branch.
