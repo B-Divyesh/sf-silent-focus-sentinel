@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { execFileSync, spawnSync } from 'node:child_process';
-import { mkdtempSync, readFileSync } from 'node:fs';
+import { chmodSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { createServer } from 'node:http';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -49,15 +50,35 @@ test('@claim:record-command captures ordered JSON Lines', () => {
   expect(trace.events.map((event: { index: number }) => event.index)).toEqual([1, 2]);
 });
 
-test('@claim:diff-regressions reports new findings', () => {
+test('@claim:diff-regressions reports new and resolved findings', () => {
   const result = spawnSync(bin, ['diff', 'examples/baseline-trace.json', 'examples/sample-trace.json', '--fail-on', 'regressions'], { encoding: 'utf8' });
   expect(result.status).toBe(1);
   const report = JSON.parse(result.stdout);
   expect(report.newFindings).toHaveLength(2);
   expect(report.resolvedFindings).toHaveLength(0);
+
+  const reverse = spawnSync(bin, ['diff', 'examples/sample-trace.json', 'examples/baseline-trace.json'], { encoding: 'utf8' });
+  expect(reverse.status).toBe(0);
+  const reverseReport = JSON.parse(reverse.stdout);
+  expect(reverseReport.newFindings).toHaveLength(0);
+  expect(reverseReport.resolvedFindings).toHaveLength(2);
 });
 
-test('@claim:local-only demo uses no outside requests or storage', async ({ page, context }) => {
+test('@claim:xctest-capture runs a marked XCTest simulator traversal through the CLI', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'sfs-xctest-'));
+  const xcodebuild = join(dir, 'xcodebuild');
+  const output = join(dir, 'trace.json');
+  writeFileSync(xcodebuild, `#!/bin/sh
+printf '%s\\n' 'Test Suite started' 'SFS_EVENT:{"id":"checkout.title","role":"header","announcement":"Checkout, heading"}' 'SFS_EVENT:{"id":"checkout.pay","role":"button","announcement":"Pay now, button"}'
+`);
+  chmodSync(xcodebuild, 0o755);
+  execFileSync(bin, ['record-xctest', '--scheme', 'CheckoutUITests', '--xcodebuild', xcodebuild, '--output', output]);
+  const trace = JSON.parse(readFileSync(output, 'utf8'));
+  expect(trace.platform).toContain('iOS Simulator');
+  expect(trace.events.map((event: { id: string }) => event.id)).toEqual(['checkout.title', 'checkout.pay']);
+});
+
+test('@claim:local-only demo and CLI use no outside requests or storage', async ({ page, context }) => {
   const outside: string[] = [];
   page.on('request', (request) => {
     const url = new URL(request.url());
@@ -69,6 +90,26 @@ test('@claim:local-only demo uses no outside requests or storage', async ({ page
   expect(outside).toEqual([]);
   expect(await context.cookies()).toEqual([]);
   expect(await page.evaluate(() => ({ local: localStorage.length, session: sessionStorage.length }))).toEqual({ local: 0, session: 0 });
+
+  const connections: string[] = [];
+  const server = createServer((request, response) => {
+    connections.push(request.url ?? 'unknown');
+    response.writeHead(502).end();
+  });
+  await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
+  const address = server.address();
+  if (!address || typeof address === 'string') throw new Error('proxy did not bind to a TCP port');
+  try {
+    const result = spawnSync(bin, ['demo'], {
+      encoding: 'utf8',
+      env: { ...process.env, HTTP_PROXY: `http://127.0.0.1:${address.port}`, HTTPS_PROXY: `http://127.0.0.1:${address.port}`, ALL_PROXY: `http://127.0.0.1:${address.port}`, NO_PROXY: '' },
+    });
+    expect(result.status).toBe(0);
+    await new Promise((resolve) => setTimeout(resolve, 25));
+    expect(connections).toEqual([]);
+  } finally {
+    await new Promise<void>((resolve, reject) => server.close((error) => error ? reject(error) : resolve()));
+  }
 });
 
 test('@claim:sample-download exports the demo trace', async ({ page }) => {

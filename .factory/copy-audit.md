@@ -16,14 +16,14 @@ Counts treat commands, labels, and navigation text as interface terms rather tha
 | This focus stop announces nothing. | 5 |
 | This repeats the previous focus stop. | 6 |
 | Move from swipe order to review. | 7 |
-| Run your XCTest script and capture each ordered focus event. | 10 |
+| Run the included XCTest helper in an iOS Simulator. | 9 |
 | Find empty speech and repeated adjacent announcements. | 7 |
 | Review new and resolved findings in CI. | 7 |
 | Run it before setup. | 5 |
 | The demo copies a checkout trace into a temporary directory. | 10 |
 | It writes both report formats there. | 6 |
-| Your script drives the simulator. | 6 |
-| The tool reads ordered events from XCTest or another runner. | 10 |
+| Your test drives the simulator. | 6 |
+| The included XCTest helper records each scripted stop. | 8 |
 | It does not call private VoiceOver APIs. | 8 |
 | It checks silent and repeated speech. | 7 |
 | It does not certify WCAG conformance. | 7 |

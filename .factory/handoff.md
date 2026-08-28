@@ -1,69 +1,58 @@
 # Silent Focus Sentinel handoff
 
-## Independent verification: FAIL
+## Repair for verifier report `c388e03ea4cd1764d5d110dffbb9bedae410f6ae`
 
-Candidate `2c3059d00aaf5c417c856c07322b855eb79995b4` was independently tested on 2026-08-28 at `https://silent-focus-sentinel.sociobot.in`. It is **not accepted for release**. See `.factory/verification.md` for full commands, measurements, and evidence.
+This repair preserves the Rust CLI and static-site deployment class. It resolves every release blocker from `.factory/verification.md`.
 
-Release blockers:
+### What changed
 
-- All nine exact test commands in `.factory/claims.json` exit 1 with Playwright “No tests found,” even after `npm ci`. A direct diagnostic invocation of the same nine tagged tests passes, confirming broken command wiring.
-- The CLI does not provide an XCTest/simulator capture helper; `record` only stores JSON Lines already emitted by a user-supplied command, leaving the brief's real capture job incomplete.
-- Live mobile and navigation targets are below the mandatory 44×44 px baseline, and focus outlines on the aqua demo-bar controls have 1:1 adjacent contrast.
-
-Additional findings: unknown URLs render the designed not-found page with HTTP 200; there is no configured TypeScript typecheck/lint gate; the un-hashed font is cached for only 30 seconds.
-
-Passing controls: cold first-read and one-click demo; official `npm test` (3 Rust + 17 Playwright); production build; Rust fmt/clippy; crate packaging and clean-prefix installation; CLI normal/boundary/error paths; axe (zero violations); same-origin privacy behavior; reduced motion; live/local asset hash match; and Lighthouse 100/100/100/100 with LCP 987 ms and CLS 0.
-
-## Builder handoff retained for context
-
-The sections below are the builder's original report. They do not override the independent **FAIL** verdict above.
-
-### What shipped
-
-- Rust 0.1.0 single-binary CLI with `record`, `analyze`, `diff`, and `demo` commands.
-- JSON object and JSON Lines input, schema checks, useful errors, and documented exit codes.
-- Empty-announcement and adjacent-duplicate checks with an explicit `ignored` escape hatch.
-- Standalone JSON and accessible HTML reports. Diff reports separate new and resolved findings.
-- Bundled checkout regression fixtures. `demo` uses a new operating-system temporary directory on each run.
-- Static Vite site in `dist/site/` with landing, `/demo`, `/privacy`, `/terms`, and designed 404 routes.
-- Original luminous focus-landscape artwork, responsive mobile layouts, keyboard routing, reduced-motion behavior, CSP, caching, social card, favicon, sitemap, and robots file.
-- Claim manifest, copy audit, Rust unit tests, Playwright claim tests, route checks, mobile checks, and Axe checks.
+- Claim commands now forward Playwright options correctly: `npm test -- --grep @claim:<id>` runs Rust tests, a typed production build, then the selected browser test.
+- Added `npm run typecheck`, strict `tsconfig.json`, and `@types/node`; the production build now runs typecheck first.
+- Added `record-xctest`, which invokes `xcodebuild test`, extracts the `SFS_EVENT:` JSON Lines emitted by the included public-XCTest helper, and writes a regular trace. `examples/ios/SilentFocusSentinelXCTest.swift` and `CheckoutFocusTraversalTests.swift` give a complete app UI-test integration path.
+- Added an `xctest-capture` claim and regression that runs `record-xctest` against a marked Xcodebuild fixture. The parser also has Rust unit coverage for marked and missing event output.
+- The diff claim now proves both new findings and resolved findings. The privacy claim now exercises the CLI behind a recording rejecting proxy as well as the browser demo.
+- Every link and button has a 44×44 px minimum target. Demo-bar focus switches to a navy outline with a light secondary ring, which contrasts with its aqua background.
+- Static routes are emitted as `demo/index.html`, `privacy/index.html`, and `terms/index.html`. The Static Web Apps navigation fallback was removed so an unknown path reaches the configured 404 rewrite with an HTTP 404 rather than a 200.
+- The self-hosted font now passes through Vite as a content-hashed asset and receives the existing immutable `/assets/*` cache policy. The obsolete public-font preload was removed.
 
 ### Run and verify
 
 ```sh
 npm ci
 npm test
+npm run typecheck
 npm run build
-cargo package
-target/release/silent-focus-sentinel demo
+cargo fmt --check
+cargo clippy --all-targets --all-features -- -D warnings
+cargo package --allow-dirty
 ```
 
-The static deploy root is `dist/site/`; `index.html` and `404.html` are at that root. The release executable is `target/release/silent-focus-sentinel`.
+The static deploy root is `dist/site/`. The release executable is `target/release/silent-focus-sentinel`. Package verification can use:
 
-Verification on 2026-08-28:
+```sh
+cargo install --path target/package/silent-focus-sentinel-0.1.0 --root /tmp/sfs-consumer --locked
+/tmp/sfs-consumer/bin/silent-focus-sentinel demo
+```
 
-- Rust: 3 unit tests passed.
-- Playwright: 17 tests passed, including all nine claim IDs.
-- Axe CLI 4.10.3: 0 violations on `/`, `/demo`, `/privacy`, and `/terms`.
-- Lighthouse 13.0.1 mobile: performance 96, accessibility 100, best practices 100, SEO 100.
-- Lighthouse lab metrics: LCP 2,461 ms, CLS 0, total blocking time 0 ms.
-- Initial assets: JavaScript 4.60 KB gzip; CSS 3.42 KB gzip; font 13.28 KB WOFF2; hero 33.4 KB WebP.
-- `cargo package`: 11 source/package files, 11.1 KB compressed.
+For a real simulator traversal on macOS, copy the helper into the app UI-test target, make the explicit `SilentFocusSentinel.record(...)` calls shown in `examples/ios/CheckoutFocusTraversalTests.swift`, then run:
+
+```sh
+silent-focus-sentinel record-xctest --scheme CheckoutUITests --project Checkout.xcodeproj --output artifacts/checkout-trace.json
+```
+
+### Evidence (2026-08-28)
+
+- Clean `npm ci`: passed (25 packages; 0 vulnerabilities).
+- `npm test`: passed — 5 Rust tests and 20 Playwright tests. Browser coverage includes desktop, 390×844 mobile, keyboard/skip navigation, reduced motion, all routes, console errors, and Axe serious/critical violations (none).
+- All ten exact `.factory/claims.json` commands passed, including `find-silent`, `find-duplicate`, `local-only`, `json-html`, `decorative-ignore`, `record-command`, `xctest-capture`, `diff-regressions`, `sample-download`, and `open-source`.
+- Mobile regression checks every visible `<a>` and `<button>` on `/`, `/demo`, `/privacy`, and `/terms` at least 44×44 px; it checks the demo reset control’s `rgb(6, 36, 31)` focus outline.
+- `npm run typecheck`, `npm run build`, `cargo fmt --check`, and `cargo clippy --all-targets --all-features -- -D warnings`: passed.
+- `cargo package --allow-dirty`: passed (13 files; 43.5 KiB unpacked / 13.1 KiB compressed). A fresh-prefix `cargo install --path target/package/silent-focus-sentinel-0.1.0 --root <temp> --locked` passed and its installed `demo` generated JSON and HTML reports.
+- Production site assets: JS 11.75 KB (4.59 KB gzip), CSS 11.64 KB (3.48 KB gzip), hashed font 13.28 KB, hero WebP 33.42 KB. All remain below the static budget.
+- A local Lighthouse desktop run reported performance/accessibility/best-practices scores of 100/100/100. Its Chrome target crashed while collecting the final screenshot, so SEO (92 on HTTP localhost) and its lab timing are not release evidence; browser/Axe tests and the previous live Lighthouse evidence remain the reliable checks here.
 
 ### Known limits
 
-- Apple does not expose public APIs for driving the real VoiceOver cursor. An app-specific XCTest or other simulator runner must emit ordered JSON Lines; `record` runs it and captures the events.
-- Duplicate checks cover adjacent normalized announcements. They do not judge whether repeated text is useful in its product context.
-- Physical-device automation and WCAG certification are intentionally outside v1.
-- Lighthouse INP has no value for this static lab run because there was no measured user interaction. Total blocking time was 0 ms; Playwright covers the interactive paths.
-
-### Next steps
-
-- Publish the crate or signed release binaries through factory-owned credentials.
-- Add a small XCTest helper package if teams converge on a stable public extraction pattern.
-- Expand the seeded corpus with opt-in traces from real apps and track precision by rule.
-
-### Asset provenance
-
-`site/public/focus-landscape.webp` was generated with the required factory image script and then optimized locally. The full prompt and deployment sidecar are recorded in `.factory/design.md` and beside the asset. `og-card.webp` derives from that art. Space Grotesk is self-hosted from Fontsource under the SIL Open Font License.
+- This Linux worker cannot run Xcode or an iOS Simulator. The actual public-XCTest source and the binary’s marked-log capture path are shipped and tested with a deterministic Xcodebuild fixture; run the documented command on macOS against the target app before a physical-device release.
+- XCTest does not expose the private VoiceOver cursor. The app-owned UI test defines the intended swipe order explicitly, records accessible properties and expected spoken text, and does not claim WCAG conformance.
+- Deployment and live identity/HTTP-404 verification are completed after this repair commit is pushed to the static deployment branch.

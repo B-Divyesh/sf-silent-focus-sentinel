@@ -2,9 +2,9 @@
 
 Catch silent VoiceOver focus stops before release.
 
-Silent Focus Sentinel is a local command-line tool for iOS teams. It reads a scripted focus traversal, flags empty or repeated announcements, and writes review-ready JSON and HTML.
+Silent Focus Sentinel is a local command-line tool for iOS teams. It runs an XCTest traversal in an iOS Simulator, records ordered focus events, flags empty or repeated announcements, and writes review-ready JSON and HTML.
 
-It does not control private VoiceOver APIs or certify WCAG conformance. Your XCTest or simulator script supplies ordered focus events as JSON. The `record` command can run that script and capture its standard output.
+It does not control private VoiceOver APIs or certify WCAG conformance. The included XCTest helper records an app-owned traversal using public XCTest APIs. The generic `record` command also accepts JSON Lines from another runner.
 
 ## Try the bundled demo
 
@@ -27,7 +27,23 @@ silent-focus-sentinel --help
 
 No account, network request, or runtime service is required.
 
-## Record a scripted traversal
+## Record an iOS Simulator XCTest traversal
+
+Copy [`examples/ios/SilentFocusSentinelXCTest.swift`](examples/ios/SilentFocusSentinelXCTest.swift) into your UI-test target, then make an explicit traversal like [`examples/ios/CheckoutFocusTraversalTests.swift`](examples/ios/CheckoutFocusTraversalTests.swift). Each `SilentFocusSentinel.record(...)` call writes an ordered `SFS_EVENT:` JSON line to the XCTest log.
+
+Run the real simulator capture path:
+
+```sh
+silent-focus-sentinel record-xctest \
+  --scheme CheckoutUITests \
+  --project Checkout.xcodeproj \
+  --destination "platform=iOS Simulator,name=iPhone 16" \
+  --output artifacts/checkout-trace.json
+```
+
+`record-xctest` runs `xcodebuild test`, extracts the helper's marked events, and saves a regular trace. XCTest does not expose the private VoiceOver cursor, so the test defines the intended swipe order explicitly and records the labels, values, and expected spoken text at each stop.
+
+## Record another scripted traversal
 
 Your runner prints one JSON object per focus stop. Each line needs `id`, `role`, and `announcement`; `label`, `value`, `hint`, and `ignored` are optional.
 
@@ -49,7 +65,7 @@ silent-focus-sentinel analyze artifacts/checkout-trace.json \
   --fail-on findings
 ```
 
-`record` accepts a command that emits JSON Lines. This keeps app-specific navigation in XCTest and analysis in one portable binary. A non-zero runner exit is passed through as an error.
+`record` accepts a command that emits JSON Lines. A non-zero runner exit is passed through as an error.
 
 ## Compare a baseline
 
@@ -79,7 +95,7 @@ An event is silent when its trimmed `announcement` is empty. An event is duplica
 ## Develop and verify
 
 ```sh
-npm install
+npm ci
 npm test
 npm run build
 ```

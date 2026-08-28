@@ -11,11 +11,11 @@ Silent Focus Sentinel uses a **luminous glass data landscape**. A focus run is s
 - Mist `#AAC1D4`: secondary text. Grid `#294860`: dividers and focus rails.
 - Day treatment uses ice `#EEF8FA`, navy `#102536`, teal `#087A68`, and coral `#A83F32` in report output. The public site stays explicitly dark because a night control-room field makes quiet gaps readable.
 
-All normal text combinations target at least 4.5:1 contrast. Focus uses a 3 px aqua outline plus offset, never color alone.
+All normal text combinations target at least 4.5:1 contrast. Focus uses a 3 px aqua outline plus offset, never color alone; controls on the aqua demo bar switch to a navy outline so it remains visible against that surface.
 
 ## Type and spacing
 
-- Display: self-hosted **Space Grotesk**, 600, for compact technical headings. The Latin WOFF2 comes from Fontsource under the SIL Open Font License; its license ships beside the font.
+- Display: self-hosted **Space Grotesk**, 600, for compact technical headings. The Latin WOFF2 comes from Fontsource under the SIL Open Font License; its license ships beside the font and Vite emits it as a content-hashed immutable asset.
 - Body and data: system UI; `ui-monospace` for commands and trace values.
 - Scale: 14, 16, 20, 28, 44, and 64 px. Body never drops below 16 px.
 - Spacing follows 4/8 px increments. Sections use 80–128 px vertical gaps; controls are at least 44 px tall.
