@@ -1,0 +1,7 @@
+[
+  {"id":"find-silent","claim":"Flags empty focus stops","where":"landing page, README","test":"npm test -- --grep @claim:find-silent","sandbox":"temporary directory; bundled sample trace; assert empty announcement finding"},
+  {"id":"find-duplicate","claim":"Flags adjacent duplicate announcements","where":"landing page, README","test":"npm test -- --grep @claim:find-duplicate","sandbox":"temporary directory; bundled sample trace; assert duplicate announcement finding"},
+  {"id":"local-only","claim":"Keeps traces on your machine","where":"landing page, privacy page, README","test":"npm test -- --grep @claim:local-only","sandbox":"fresh browser context; run full demo while rejecting and recording non-local requests"},
+  {"id":"json-html","claim":"Writes JSON and HTML reports","where":"landing page, README","test":"npm test -- --grep @claim:json-html","sandbox":"temporary directory; run CLI demo; parse JSON and inspect standalone HTML"},
+  {"id":"decorative-ignore","claim":"Lets teams ignore intentional decorative stops","where":"landing page, README","test":"npm test -- --grep @claim:decorative-ignore","sandbox":"bundled sample trace; assert ignored decorative event produces no finding"}
+]

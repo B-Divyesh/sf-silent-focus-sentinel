@@ -1,0 +1,11 @@
+{
+  "slug": "silent-focus-sentinel",
+  "title": "Silent Focus Sentinel",
+  "territory": "utilities",
+  "user": "Mobile app teams and VoiceOver users who need to catch focus stops that announce nothing before a release makes navigation confusing.",
+  "smallest_useful_product": "An iOS simulator-focused CLI that records a scripted focus traversal, flags focusable nodes with empty/duplicate announcements, and emits a compact JSON/HTML diff.",
+  "success_measure": "On a seeded regression suite, it flags at least 90% of intentional empty-focus stops with fewer than 10% false positives.",
+  "artifact_class": "cli",
+  "monetization": "free",
+  "constraints": "Keep artifacts local; allow ignored decorative nodes; do not claim WCAG conformance."
+}
