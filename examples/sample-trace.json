@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "screen": "Checkout",
+  "platform": "iOS Simulator 18.2",
+  "events": [
+    {"index": 1, "id": "checkout.title", "role": "header", "label": "Checkout", "announcement": "Checkout, heading"},
+    {"index": 2, "id": "checkout.address", "role": "button", "label": "Delivery address", "value": "14 Oak Street", "announcement": "Delivery address, 14 Oak Street, button"},
+    {"index": 3, "id": "checkout.promo", "role": "button", "label": "", "announcement": ""},
+    {"index": 4, "id": "checkout.total-label", "role": "staticText", "label": "Total, $42.00", "announcement": "Total, $42.00"},
+    {"index": 5, "id": "checkout.total-value", "role": "staticText", "label": "Total, $42.00", "announcement": " Total,   $42.00 "},
+    {"index": 6, "id": "checkout.separator", "role": "image", "label": "", "announcement": "", "ignored": true},
+    {"index": 7, "id": "checkout.pay", "role": "button", "label": "Pay now", "hint": "Completes the order", "announcement": "Pay now, button"}
+  ]
+}
