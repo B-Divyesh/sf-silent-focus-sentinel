@@ -1,0 +1,22 @@
+{
+  "name": "silent-focus-sentinel-site",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --config site/vite.config.ts",
+    "build:cli": "cargo build --release",
+    "build:site": "vite build --config site/vite.config.ts && node site/scripts/postbuild.mjs",
+    "build": "npm run build:cli && npm run build:site",
+    "test:unit": "cargo test",
+    "test:e2e": "playwright test",
+    "test": "npm run test:unit && npm run build && npm run test:e2e"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "4.10.2",
+    "@fontsource/space-grotesk": "5.2.9",
+    "@playwright/test": "1.58.2",
+    "typescript": "5.9.2",
+    "vite": "7.1.3"
+  }
+}

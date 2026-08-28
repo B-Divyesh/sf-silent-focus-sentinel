@@ -9,7 +9,7 @@ repository = "https://github.com/B-Divyesh/sf-silent-focus-sentinel"
 readme = "README.md"
 keywords = ["accessibility", "voiceover", "ios", "testing", "cli"]
 categories = ["command-line-utilities", "development-tools::testing"]
-include = ["src/**", "examples/**", "README.md", "LICENSE", "CHANGELOG.md"]
+include = ["/src/**", "/examples/**", "/README.md", "/LICENSE", "/CHANGELOG.md"]
 
 [[bin]]
 name = "silent-focus-sentinel"
@@ -22,4 +22,3 @@ serde_json = "1"
 
 [dev-dependencies]
 tempfile = "3"
-

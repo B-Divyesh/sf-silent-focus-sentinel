@@ -1,5 +1,9 @@
-node_modules/
-dist/
+/target/
+/node_modules/
+/dist/
+/test-results/
+/playwright-report/
+/site/public/focus-landscape.png
 .env
 *.log
 graphify-out/
