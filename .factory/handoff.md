@@ -31,7 +31,7 @@ Verification on 2026-08-28:
 - Lighthouse 13.0.1 mobile: performance 96, accessibility 100, best practices 100, SEO 100.
 - Lighthouse lab metrics: LCP 2,461 ms, CLS 0, total blocking time 0 ms.
 - Initial assets: JavaScript 4.60 KB gzip; CSS 3.42 KB gzip; font 13.28 KB WOFF2; hero 33.4 KB WebP.
-- `cargo package`: 10 source/package files, 68 KB compressed before the final documentation-only changes.
+- `cargo package`: 11 source/package files, 11.1 KB compressed.
 
 ## Known limits
 
