@@ -35,11 +35,15 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          xcrun simctl spawn "${{ steps.simulator.outputs.device_id }}" defaults write com.apple.Accessibility AutomationEnabled -bool true
           xcrun simctl spawn "${{ steps.simulator.outputs.device_id }}" defaults write com.apple.Accessibility AccessibilityEnabled -bool true
+          xcrun simctl spawn "${{ steps.simulator.outputs.device_id }}" defaults write com.apple.Accessibility ApplicationAccessibilityEnabled -bool true
           xcrun simctl spawn "${{ steps.simulator.outputs.device_id }}" defaults write com.apple.Accessibility VoiceOverTouchEnabled -bool true
           xcrun simctl shutdown "${{ steps.simulator.outputs.device_id }}"
           xcrun simctl boot "${{ steps.simulator.outputs.device_id }}"
           xcrun simctl bootstatus "${{ steps.simulator.outputs.device_id }}" -b
+          test "$(xcrun simctl spawn "${{ steps.simulator.outputs.device_id }}" defaults read com.apple.Accessibility AutomationEnabled)" = 1
+          test "$(xcrun simctl spawn "${{ steps.simulator.outputs.device_id }}" defaults read com.apple.Accessibility ApplicationAccessibilityEnabled)" = 1
           test "$(xcrun simctl spawn "${{ steps.simulator.outputs.device_id }}" defaults read com.apple.Accessibility VoiceOverTouchEnabled)" = 1
           # The preference survives reboot, but the running accessibility
           # service only observes it after this documented Darwin notification.
