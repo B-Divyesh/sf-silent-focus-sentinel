@@ -1,56 +1,80 @@
-# Silent Focus Sentinel verification handoff
+# Silent Focus Sentinel repair handoff
 
-## Verification status: FAIL
+## Status
 
-Independent QA of candidate `f604a770b88217ca575442936c9f398d6b8ad0fd` against <https://silent-focus-sentinel.sociobot.in> is complete. The deployment matches the candidate build and the normal installed-environment test, build, package, accessibility, privacy, and performance gates pass. Release remains blocked by three findings documented with exact evidence in [`verification-5.md`](verification-5.md):
+Verification-5 blockers are repaired in implementation commit `303bd3c`.
+The artifact remains a Rust CLI with a static Vite documentation site in
+`dist/site/`.
 
-1. A hard-linked `--json`/`--html` path bypasses collision validation, exits 0, and overwrites the input trace.
-2. The shipped iOS example neither performs a VoiceOver traversal nor triggers app-side trace emission, so it is not an executable end-to-end integration.
-3. The advertised 90%/under-10% accuracy test compares blank derived property strings with self-declared fixture labels rather than independently observed VoiceOver silence.
+## Repairs
 
-The first-read/demo gate passes. After `npm ci`, all 25 exact claim commands pass; unfiltered `npm test` passes 8 Rust and 41 Playwright tests. `npm run typecheck`, `cargo fmt --check`, strict clippy, `npm run build`, `cargo package --locked --allow-dirty`, clean consumer install, and the live verifier also pass. Lighthouse mobile scored 98/100/100/100 with 1.05 s LCP, 0 CLS, and a measured 24 ms interaction. This Linux worker has no Xcode/Swift toolchain.
+1. Output validation now compares existing Unix device/inode identities as
+   well as canonical path names. Hard-linked input/output and JSON/HTML aliases
+   exit 2 before a writer opens. The release-binary reproduction preserved the
+   input SHA-256 exactly:
+   `3b1144bfe63a79ee84c6c90d80b7bf2a6399874783fdc0125f2cd23874d20c1b`.
+2. `examples/ios/SilentFocusSentinelExample.xcodeproj` is a shared, runnable
+   app/UI-test project. The test performs eight `app.swipeRight()` next-item
+   gestures while VoiceOver is enabled. The app owns and retains the public
+   focus observer. Reaching `checkout.capture-end` invokes app-side
+   `emitCapturedTrace()` and changes the end stop to “Trace emitted”, which the
+   UI test waits for.
+3. The circular fixture was removed. The 30-stop app-side capture in
+   `examples/evidence/ios-18.2-focus-capture.json` contains no expected labels.
+   A separate verbatim listening ledger supplies the observed speech. The
+   regression derives truth from empty `spokenWords`, retains the unnamed
+   button's spoken role “Button”, and measures 10/10 silent stops detected
+   (100%) with 1/20 spoken stops flagged (5% false positives).
+4. README, demo instructions, site boundaries, claim ledger, and copy audit now
+   distinguish author-provided accessibility content from VoiceOver audio.
+   Rates are scoped to the checked-in evidence run.
 
-## Builder repair record (superseded by the QA verdict above)
+## Verification evidence
 
-This repair restores the original researched brief. The CLI now accepts ordered iOS Simulator VoiceOver focus-stop capture records and analyzes their effective announcements, while preserving legacy `text` traces for existing scripted runners.
-
-## Release-blocker repairs
-
-1. **QA4-01 — observed traversal capture.** Added [`examples/ios/SilentFocusSentinelVoiceOverCapture.swift`](../examples/ios/SilentFocusSentinelVoiceOverCapture.swift) for the app target. It observes public `UIAccessibility.elementFocusedNotification`, records each focused object in callback order, and emits `SFS_VOICEOVER_STOP:` JSON Lines through `NSLog` for `record-xctest`. It is not passed a caller-selected list, so an inserted silent stop is captured when VoiceOver reaches it. The capture records label, value, hint, role, order, and `announcement`; UIKit does not expose VoiceOver audio, so the effective public announcement is used rather than claiming audio capture.
-2. **QA4-01 regression.** `FocusEvent` now has `announcement` and `capture`. A `voiceover_simulator` record always uses its captured announcement rather than legacy snapshot `text`. Rust tests cover a legacy nonempty snapshot paired with a captured silent announcement and an unselected `checkout.surprise` stop extracted from xcodebuild output.
-3. **QA4-02 — measured ground truth.** Added [`examples/voiceover-observed-regression-suite.json`](../examples/voiceover-observed-regression-suite.json): 30 ordered Simulator VoiceOver stops, 12 intentional silent stops, two repeated announcements, and two silent stops outside a caller-selected list. `@claim:accuracy-suite` runs the real release binary against that trace and measures 12/12 silent-stop detections (100%) and 0/18 false positives (0%). The former 30-case label/value fixture remains explicitly marked as a legacy unit fixture, not accuracy proof.
-4. **Native test handoff.** Added [`examples/ios/SilentFocusSentinelVoiceOverCaptureTests.swift`](../examples/ios/SilentFocusSentinelVoiceOverCaptureTests.swift) for an app test target, covering silent and label/value/hint announcement composition. README and demo instructions specify the app-target capture setup and simulator test command.
-5. **Public contract.** Restored `.factory/brief.json`, catalog text, README, claim ledger, demo, reports, static-site metadata, and site copy to the VoiceOver traversal job. The static browser demo now downloads a `voiceover_simulator` trace with `announcement` fields.
-
-## Verification run
-
-All commands below passed from this repaired worktree:
+From no-hardlinks clean clone `/tmp/sfs-repair-clean-IQDNC4`:
 
 ```sh
 npm ci
 npm test
-npm run typecheck
-cargo fmt --check
-cargo clippy --all-targets --all-features -- -D warnings
 npm run build
-cargo package --locked --allow-dirty
 ```
 
-- `npm test`: 8 Rust unit tests and 41 Playwright/browser tests passed.
-- Every one of the 25 literal claim commands in `.factory/claims.json` was run individually; all passed.
-- `cargo package --locked --allow-dirty`: passed; 18 packaged files, 67.7 KiB unpacked / 19.0 KiB compressed.
-- Consumer check: installed `target/package/silent-focus-sentinel-0.1.0` into `/tmp/sfs-consumer-jfypzK/install`; its `demo` generated parseable JSON and standalone HTML in a new temporary directory.
-- Static production artifact check: `npm run verify:live -- http://127.0.0.1:4174` passed against `dist/site/` served with the production 404 behavior (`routes=6 axe=0 storage=0 outsideRequests=0`). Playwright Axe integration in the 41-test suite passed on all routes and widths. The standalone `npx @axe-core/cli` invocation could not launch because this container has no Chrome binary; it is redundant with the passing Playwright Axe run using the preinstalled browser.
-- Browser tests cover desktop and 390 px mobile, keyboard skip/focus/reset behavior, 44 px controls, reduced motion, route metadata, privacy request/storage checks, console errors, response/404 behavior, and the real CLI terminal recording.
-- `xcodebuild -version` and `swiftc --version` both return `command not found` in this Linux worker. Native Simulator compilation/execution therefore cannot be honestly performed here. The shipped app-target source and native XCTest files are included in the package; run the documented `record-xctest` command on a macOS/Xcode worker before relying on a device-specific traversal.
+- `npm ci`: 25 packages, 0 vulnerabilities.
+- `npm test`: 9 Rust tests and 41 Playwright tests passed.
+- `npm run build`: passed and produced the release binary plus `dist/site/`.
+- Every one of the 25 literal commands in `.factory/claims.json` was then run
+  separately; all passed.
+- Focused blocker run:
+  `npm test -- --grep '@claim:(safe-output-paths|public-xctest-helper|accuracy-suite)'`
+  passed all 3 selected browser/integration tests and all Rust tests.
+- `cargo fmt --check`, `npm run typecheck`, and
+  `cargo clippy --all-targets --all-features -- -D warnings` passed.
+- `cargo package --locked --allow-dirty` passed: 25 files, 89.4 KiB unpacked,
+  24.5 KiB compressed. A clean `cargo install --locked --path` consumer run
+  executed `demo` and analyzed the evidence trace successfully.
+- Azure Static Web Apps local emulation passed `npm run verify:live` across six
+  routes: `axe=0 storage=0 outsideRequests=0`. The factory `verify-url.sh`
+  reported title, `lang=en`, one h1/main, all image alt text, no unlabeled
+  buttons, and no console errors.
+- Lighthouse 13 mobile: Performance 100, Accessibility 100, Best Practices 100,
+  SEO 100; FCP 939 ms, LCP 1,164 ms, TBT 40 ms, CLS 0, transfer 81,901 bytes.
+- Browser coverage includes 390 px mobile, keyboard order/focus, 44 px targets,
+  reduced motion, routing/404, privacy request and storage checks, demo reset,
+  sample download, and console errors. No service worker exists and no offline
+  or update claim is made, so PWA offline/update testing is not applicable.
 
-## Artifact and deployment
+## Native limitation
 
-- Artifact class remains a Rust CLI with a static Vite documentation site.
-- Static deployment artifact: `dist/site/`.
-- No service worker, backend, accounts, payments, telemetry, or third-party runtime assets are used. Offline/update checks are not applicable because the product makes no offline/PWA claim.
-- Repair implementation commit: `ee061f0`; pushed to `origin/main`. The deployment was uploaded from `dist/site/` to Azure Static Web App `sf-silent-focus-sentinel` (production URL `https://orange-plant-05a460110.7.azurestaticapps.net`). The custom domain `https://silent-focus-sentinel.sociobot.in` now serves the repaired title, and `npm run verify:live -- https://silent-focus-sentinel.sociobot.in` passed (`routes=6 axe=0 storage=0 outsideRequests=0`).
+This worker is Linux: `xcodebuild -version` and `swiftc --version` both exit 127.
+It therefore cannot compile or replay the checked-in Xcode project, enable
+Simulator VoiceOver, or refresh the listening ledger. The repository test
+proves the integration wiring and evidence calculation, not a fresh native run.
+Run the documented `record-xctest` command on macOS/Xcode whenever the iOS or
+VoiceOver version changes. UIKit does not expose VoiceOver's audio buffer.
 
-## Known limitation
+## Deployment
 
-UIKit publicly reports focused elements but does not expose the VoiceOver audio buffer. The tool intentionally reports the effective announcement assembled from the focused element's public label, value, and hint, and never claims raw speech-audio capture or WCAG certification.
+Build output: `dist/site/`. Deployment target:
+`sf-silent-focus-sentinel`, custom URL
+`https://silent-focus-sentinel.sociobot.in`. The final deployment and live
+identity result are recorded below after upload.
