@@ -8,23 +8,22 @@ private struct SilentFocusEvent: Encodable {
     let label: String
     let value: String
     let hint: String
-    let announcement: String
+    let text: String
     let ignored: Bool
 }
 
 /// Emits a machine-readable record for each stop in an app-owned XCTest traversal.
 ///
-/// XCTest cannot drive the private VoiceOver cursor. Keep traversal order explicit in
-/// the UI test, then record the element's current accessibility label and value for
-/// each stop. `silent-focus-sentinel record-xctest` extracts these lines from
-/// `xcodebuild test` output and writes a regular trace file.
+/// XCTest does not expose the VoiceOver cursor or speech. Keep element order explicit
+/// in the UI test. This helper records only each element's current label and value.
+/// `record-xctest` extracts these marked lines from `xcodebuild test` output.
 enum SilentFocusSentinel {
     private static let marker = "SFS_EVENT:"
 
     // This deliberately excludes the caller-supplied role. A button whose live
     // label and value regress to empty must remain empty in the trace so the CLI
-    // can flag it. The role is diagnostic metadata, not observed speech.
-    static func observedAnnouncement(label: String, value: String) -> String {
+    // can flag it. The role is diagnostic metadata, not label/value text.
+    static func observedText(label: String, value: String) -> String {
         [label, value]
             .filter { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
             .joined(separator: ", ")
@@ -39,14 +38,14 @@ enum SilentFocusSentinel {
     ) {
         let label = element.label
         let value = element.value as? String ?? ""
-        let spoken = observedAnnouncement(label: label, value: value)
+        let text = observedText(label: label, value: value)
         let event = SilentFocusEvent(
             id: id,
             role: role,
             label: label,
             value: value,
             hint: hint,
-            announcement: spoken,
+            text: text,
             ignored: ignored
         )
         let encoder = JSONEncoder()

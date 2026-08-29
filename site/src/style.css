@@ -15,3 +15,17 @@ button{min-width:44px;min-height:44px}
 
 /* The artwork may bleed within its scene, never into the document viewport. */
 html,body{overflow-x:clip}.hero{overflow:clip}
+
+/* Empty label/value text keeps the product's existing coral gap treatment. */
+.empty .node{width:17px;height:17px;margin-left:5px;border-color:var(--coral);box-shadow:0 0 18px var(--coral)}
+.empty .state-label{color:var(--coral)}
+
+@media(max-width:760px){
+  .hero h1{font-size:clamp(3rem,14vw,4.5rem);max-width:10ch}
+  .hero-art figcaption{left:16px;right:16px}
+  .page-intro{margin-top:48px;margin-bottom:32px}
+  .trace-item{grid-template-columns:24px minmax(0,1fr)}
+  .trace-copy{min-width:0}
+  .trace-copy strong,.trace-copy code,.workflow code{overflow-wrap:anywhere}
+  .workflow li{grid-template-columns:48px minmax(0,1fr)}
+}

@@ -3,10 +3,10 @@
   "screen": "Checkout",
   "platform": "iOS Simulator 18.2",
   "events": [
-    {"index": 1, "id": "checkout.title", "role": "header", "label": "Checkout", "announcement": "Checkout, heading"},
-    {"index": 2, "id": "checkout.address", "role": "button", "label": "Delivery address", "value": "14 Oak Street", "announcement": "Delivery address, 14 Oak Street, button"},
-    {"index": 3, "id": "checkout.promo", "role": "button", "label": "Add promo code", "announcement": "Add promo code, button"},
-    {"index": 4, "id": "checkout.total-label", "role": "staticText", "label": "Total, $42.00", "announcement": "Total, $42.00"},
-    {"index": 5, "id": "checkout.pay", "role": "button", "label": "Pay now", "announcement": "Pay now, button"}
+    {"index": 1, "id": "checkout.title", "role": "header", "label": "Checkout", "text": "Checkout"},
+    {"index": 2, "id": "checkout.address", "role": "button", "label": "Delivery address", "value": "14 Oak Street", "text": "Delivery address, 14 Oak Street"},
+    {"index": 3, "id": "checkout.promo", "role": "button", "label": "Add promo code", "text": "Add promo code"},
+    {"index": 4, "id": "checkout.total-label", "role": "staticText", "label": "Total, $42.00", "text": "Total, $42.00"},
+    {"index": 5, "id": "checkout.pay", "role": "button", "label": "Pay now", "text": "Pay now"}
   ]
 }

@@ -1,10 +1,12 @@
 # Silent Focus Sentinel
 
-Catch silent VoiceOver focus stops before release.
+Flag empty or duplicate label/value text in scripted iOS accessibility checks.
 
-Silent Focus Sentinel is a local command-line tool for iOS teams. It runs an XCTest traversal in an iOS Simulator, records ordered focus events, flags empty or repeated announcements, and writes review-ready JSON and HTML.
+Silent Focus Sentinel is a local command-line tool for iOS teams. Your XCTest chooses the elements and their order.
 
-It does not control private VoiceOver APIs or certify WCAG conformance. The included XCTest helper records an app-owned traversal using public XCTest APIs. The generic `record` command also accepts JSON Lines from another runner.
+The helper reads each element's public XCTest label and string value. The CLI writes JSON and HTML findings.
+
+It does not observe the VoiceOver cursor, speech, traits, or hints. It does not certify WCAG conformance.
 
 ## Try the bundled demo
 
@@ -12,9 +14,9 @@ It does not control private VoiceOver APIs or certify WCAG conformance. The incl
 cargo run -- demo
 ```
 
-The command creates an isolated temporary directory. It copies the bundled checkout trace there and writes both reports. Nothing is saved to your project.
+The command creates a new operating-system temporary directory. It copies the bundled checkout trace and writes both report formats there.
 
-The browser demo is at <https://silent-focus-sentinel.sociobot.in/demo>.
+Nothing is added to or changed in your project directory. The browser demo opens at <https://silent-focus-sentinel.sociobot.in/?demo=1>.
 
 ## Install
 
@@ -25,13 +27,15 @@ cargo install --path .
 silent-focus-sentinel --help
 ```
 
-No account, network request, or runtime service is required.
+Every command runs without an account, credentials, or runtime service.
 
-## Record an iOS Simulator XCTest traversal
+## Extract marked XCTest output
 
-Copy [`examples/ios/SilentFocusSentinelXCTest.swift`](examples/ios/SilentFocusSentinelXCTest.swift) into your UI-test target, then make an explicit traversal like [`examples/ios/CheckoutFocusTraversalTests.swift`](examples/ios/CheckoutFocusTraversalTests.swift). Each `SilentFocusSentinel.record(...)` call writes an ordered `SFS_EVENT:` JSON line to the XCTest log.
+Copy [`examples/ios/SilentFocusSentinelXCTest.swift`](examples/ios/SilentFocusSentinelXCTest.swift) into your UI-test target.
 
-Run the real simulator capture path:
+Choose an explicit element order as shown in [`examples/ios/CheckoutFocusTraversalTests.swift`](examples/ios/CheckoutFocusTraversalTests.swift).
+
+Each `SilentFocusSentinel.record(...)` call prints one marked `SFS_EVENT:` line with the element's current label/value text.
 
 ```sh
 silent-focus-sentinel record-xctest \
@@ -41,15 +45,19 @@ silent-focus-sentinel record-xctest \
   --output artifacts/checkout-trace.json
 ```
 
-`record-xctest` runs `xcodebuild test`, extracts the helper's marked events, and saves a regular trace. XCTest does not expose the private VoiceOver cursor, so the test defines the intended swipe order explicitly and records the current labels and values at each stop.
+`record-xctest` starts `xcodebuild test`. It extracts marked lines from the command output and saves a trace JSON file.
 
-## Record another scripted traversal
+XCTest does not expose the VoiceOver cursor or speech. Your test chooses the elements; this tool does not validate VoiceOver navigation.
 
-Your runner prints one JSON object per focus stop. Each line needs `id`, `role`, and `announcement`; `label`, `value`, `hint`, and `ignored` are optional.
+## Record another scripted check
+
+Your runner prints one JSON object per element. Each line needs `id`, `role`, and `text`.
+
+The optional fields are `label`, `value`, `hint`, and `ignored`.
 
 ```json
-{"id":"checkout.title","role":"header","label":"Checkout","announcement":"Checkout, heading"}
-{"id":"checkout.offer","role":"button","label":"","announcement":""}
+{"id":"checkout.title","role":"header","label":"Checkout","text":"Checkout"}
+{"id":"checkout.offer","role":"button","label":"","text":""}
 ```
 
 Capture and analyze it:
@@ -65,9 +73,7 @@ silent-focus-sentinel analyze artifacts/checkout-trace.json \
   --fail-on findings
 ```
 
-`record` accepts a command that emits JSON Lines. A non-zero runner exit is passed through as an error.
-
-The XCTest helper derives each announcement from the element's current accessibility label and value. Do not pass a prewritten announcement: an element that regresses to an empty label and value is written as an empty announcement and is flagged by `analyze`.
+`record` accepts a command that emits JSON Lines. A failed runner returns exit code 2 and leaves no output trace.
 
 ## Compare a baseline
 
@@ -78,23 +84,33 @@ silent-focus-sentinel diff examples/baseline-trace.json examples/sample-trace.js
   --fail-on regressions
 ```
 
-The report marks new findings and resolved findings. `--json` also prints the report to standard output when no file is given, so CI can parse it.
+The report marks new and resolved findings. Omit `--json` to print the JSON report to standard output for CI.
 
-For safety, every report path must differ from every input trace, and `--json` and `--html` must name different files. The CLI rejects a collision before writing anything.
+Every report path must differ from each input path. The JSON and HTML paths must also differ.
+
+The CLI rejects a collision before writing anything.
 
 ## Event format
 
 ```json
-{"schemaVersion":1,"screen":"Checkout","platform":"iOS Simulator 18.2","events":[{"index":1,"id":"checkout.pay","role":"button","label":"Pay now","value":"$42.00","hint":"Completes the order","announcement":"Pay now, $42.00, button","ignored":false}]}
+{"schemaVersion":1,"screen":"Checkout","platform":"iOS Simulator 18.2","events":[{"index":1,"id":"checkout.pay","role":"button","label":"Pay now","value":"$42.00","hint":"Completes the order","text":"Pay now, $42.00","ignored":false}]}
 ```
 
-An event is silent when its trimmed `announcement` is empty. An event is duplicate when its normalized announcement matches the previous non-ignored focus stop. Set `ignored: true` for an intentional decorative stop.
+An empty finding means trimmed `text` is empty. A duplicate finding means normalized `text` matches the previous non-ignored element.
+
+Set `ignored: true` for an intentional decorative or non-focusable element.
+
+## Regression accuracy
+
+[`examples/regression-suite.json`](examples/regression-suite.json) covers 30 cases across labels, values, whitespace, hints, roles, dynamic text, and ignored elements.
+
+The suite detects at least 90% of intentional empty-text cases. It keeps the empty-text false-positive rate below 10%.
 
 ## Exit codes
 
-- `0`: command completed and the selected failure threshold was not met.
+- `0`: the command completed and did not meet the selected failure threshold.
 - `1`: findings or regressions met `--fail-on`.
-- `2`: invalid arguments, unreadable input, malformed events, or a failed record command.
+- `2`: arguments, input, events, output paths, or a runner failed.
 
 ## Develop and verify
 
@@ -104,13 +120,17 @@ npm test
 npm run build
 ```
 
-`npm run build` builds the release binary and the static site. Site output lands in `dist/site/`. The release binary is `target/release/silent-focus-sentinel`.
+`npm run build` creates the release binary at `target/release/silent-focus-sentinel`.
 
-Package with `cargo package --allow-dirty`. The factory owns registry publishing.
+It creates the static site in `dist/site/`. Package with `cargo package --allow-dirty`; the factory owns registry publishing.
 
 ## Privacy
 
-The CLI reads and writes local files only. It has no telemetry. The static site stores no data and loads no third-party scripts, fonts, or analytics. See [Privacy](https://silent-focus-sentinel.sociobot.in/privacy) and [Terms](https://silent-focus-sentinel.sociobot.in/terms).
+The CLI reads and writes local files only. It has no telemetry and makes no network requests.
+
+The static site stores no data. It loads no third-party scripts, fonts, or analytics.
+
+See [Privacy](https://silent-focus-sentinel.sociobot.in/privacy) and [Terms](https://silent-focus-sentinel.sociobot.in/terms).
 
 ## License
 

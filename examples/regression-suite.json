@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 1,
+  "description": "Versioned empty-text classifier cases for caller-selected XCTest elements",
+  "cases": [
+    {"id":"empty-button","category":"button","expectedEmpty":true,"event":{"id":"empty-button","role":"button","label":"","value":"","text":""}},
+    {"id":"whitespace-button","category":"whitespace","expectedEmpty":true,"event":{"id":"whitespace-button","role":"button","label":"   ","value":"","text":"   "}},
+    {"id":"newline-cell","category":"whitespace","expectedEmpty":true,"event":{"id":"newline-cell","role":"cell","label":"\n\t","value":"","text":"\n\t"}},
+    {"id":"empty-header","category":"header","expectedEmpty":true,"event":{"id":"empty-header","role":"header","label":"","value":"","text":""}},
+    {"id":"empty-switch","category":"switch","expectedEmpty":true,"event":{"id":"empty-switch","role":"switch","label":"","value":"","text":""}},
+    {"id":"empty-text-field","category":"text field","expectedEmpty":true,"event":{"id":"empty-text-field","role":"textField","label":"","value":"","text":""}},
+    {"id":"empty-image","category":"image","expectedEmpty":true,"event":{"id":"empty-image","role":"image","label":"","value":"","text":""}},
+    {"id":"dynamic-label-cleared","category":"dynamic label","expectedEmpty":true,"event":{"id":"dynamic-label-cleared","role":"staticText","label":"","value":"","text":""}},
+    {"id":"hint-only","category":"hint excluded from measured text","expectedEmpty":true,"event":{"id":"hint-only","role":"button","label":"","value":"","hint":"Opens settings","text":""}},
+    {"id":"trait-only","category":"role excluded from measured text","expectedEmpty":true,"event":{"id":"trait-only","role":"button","label":"","value":"","text":""}},
+    {"id":"custom-empty","category":"custom element","expectedEmpty":true,"event":{"id":"custom-empty","role":"other","label":"","value":"","text":""}},
+    {"id":"spaces-in-value","category":"whitespace value","expectedEmpty":true,"event":{"id":"spaces-in-value","role":"adjustable","label":"","value":"  ","text":"  "}},
+
+    {"id":"label-button","category":"label","expectedEmpty":false,"event":{"id":"label-button","role":"button","label":"Pay now","value":"","text":"Pay now"}},
+    {"id":"value-slider","category":"value","expectedEmpty":false,"event":{"id":"value-slider","role":"adjustable","label":"","value":"50%","text":"50%"}},
+    {"id":"label-and-value","category":"label and value","expectedEmpty":false,"event":{"id":"label-and-value","role":"button","label":"Delivery address","value":"14 Oak Street","text":"Delivery address, 14 Oak Street"}},
+    {"id":"dynamic-label-loaded","category":"dynamic label","expectedEmpty":false,"event":{"id":"dynamic-label-loaded","role":"staticText","label":"3 new messages","value":"","text":"3 new messages"}},
+    {"id":"unicode-label","category":"unicode","expectedEmpty":false,"event":{"id":"unicode-label","role":"button","label":"Pagar ahora","value":"","text":"Pagar ahora"}},
+    {"id":"punctuation-label","category":"punctuation","expectedEmpty":false,"event":{"id":"punctuation-label","role":"button","label":"…","value":"","text":"…"}},
+    {"id":"number-value","category":"numeric value","expectedEmpty":false,"event":{"id":"number-value","role":"staticText","label":"","value":"0","text":"0"}},
+    {"id":"ignored-decorative","category":"ignored node","expectedEmpty":false,"event":{"id":"ignored-decorative","role":"image","label":"","value":"","text":"","ignored":true}},
+    {"id":"ignored-nonfocusable","category":"non-focusable element","expectedEmpty":false,"event":{"id":"ignored-nonfocusable","role":"container","label":"","value":"","text":"","ignored":true}},
+    {"id":"trimmed-label","category":"surrounding whitespace","expectedEmpty":false,"event":{"id":"trimmed-label","role":"button","label":" Save ","value":"","text":" Save "}},
+    {"id":"multiline-label","category":"multiline text","expectedEmpty":false,"event":{"id":"multiline-label","role":"staticText","label":"Order\ncomplete","value":"","text":"Order\ncomplete"}},
+    {"id":"emoji-label","category":"emoji label","expectedEmpty":false,"event":{"id":"emoji-label","role":"button","label":"❤️","value":"","text":"❤️"}},
+    {"id":"negative-value","category":"numeric value","expectedEmpty":false,"event":{"id":"negative-value","role":"staticText","label":"Balance","value":"-$4.00","text":"Balance, -$4.00"}},
+    {"id":"boolean-value","category":"switch value","expectedEmpty":false,"event":{"id":"boolean-value","role":"switch","label":"Notifications","value":"On","text":"Notifications, On"}},
+    {"id":"localized-value","category":"localized value","expectedEmpty":false,"event":{"id":"localized-value","role":"staticText","label":"Total","value":"42,00 €","text":"Total, 42,00 €"}},
+    {"id":"long-label","category":"long label","expectedEmpty":false,"event":{"id":"long-label","role":"button","label":"Choose a delivery window for Tuesday afternoon","value":"","text":"Choose a delivery window for Tuesday afternoon"}},
+    {"id":"symbol-label","category":"symbol label","expectedEmpty":false,"event":{"id":"symbol-label","role":"button","label":"+","value":"","text":"+"}},
+    {"id":"single-space-between","category":"internal whitespace","expectedEmpty":false,"event":{"id":"single-space-between","role":"staticText","label":"First Last","value":"","text":"First Last"}}
+  ]
+}

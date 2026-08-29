@@ -38,8 +38,8 @@ pub struct FocusEvent {
     pub value: String,
     #[serde(default)]
     pub hint: String,
-    #[serde(default)]
-    pub announcement: String,
+    #[serde(default, alias = "announcement")]
+    pub text: String,
     #[serde(default)]
     pub ignored: bool,
 }
@@ -52,15 +52,15 @@ pub struct Finding {
     pub index: usize,
     pub id: String,
     pub role: String,
-    pub announcement: String,
+    pub text: String,
     pub message: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
 #[serde(rename_all = "snake_case")]
 pub enum FindingKind {
-    SilentAnnouncement,
-    DuplicateAnnouncement,
+    EmptyText,
+    DuplicateText,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
@@ -77,7 +77,7 @@ pub struct Summary {
     pub analyzed_count: usize,
     pub ignored_count: usize,
     pub finding_count: usize,
-    pub silent_count: usize,
+    pub empty_count: usize,
     pub duplicate_count: usize,
 }
 
@@ -180,38 +180,38 @@ pub fn analyze(trace: &Trace) -> Report {
         if event.ignored {
             continue;
         }
-        let speech = normalized(&event.announcement);
-        if speech.is_empty() {
+        let text = normalized(&event.text);
+        if text.is_empty() {
             findings.push(Finding {
-                kind: FindingKind::SilentAnnouncement,
+                kind: FindingKind::EmptyText,
                 severity: Severity::Error,
                 index: event.index,
                 id: event.id.clone(),
                 role: event.role.clone(),
-                announcement: event.announcement.clone(),
-                message: "This focus stop announces nothing.".into(),
+                text: event.text.clone(),
+                message: "This element has empty label/value text.".into(),
             });
-        } else if previous.is_some_and(|prior| normalized(&prior.announcement) == speech) {
+        } else if previous.is_some_and(|prior| normalized(&prior.text) == text) {
             findings.push(Finding {
-                kind: FindingKind::DuplicateAnnouncement,
+                kind: FindingKind::DuplicateText,
                 severity: Severity::Warning,
                 index: event.index,
                 id: event.id.clone(),
                 role: event.role.clone(),
-                announcement: event.announcement.clone(),
+                text: event.text.clone(),
                 message: format!(
-                    "This repeats the previous focus stop: {:?}.",
-                    event.announcement.trim()
+                    "This duplicates the previous element's label/value text: {:?}.",
+                    event.text.trim()
                 ),
             });
         }
         previous = Some(event);
     }
-    let silent_count = findings
+    let empty_count = findings
         .iter()
-        .filter(|f| f.kind == FindingKind::SilentAnnouncement)
+        .filter(|f| f.kind == FindingKind::EmptyText)
         .count();
-    let duplicate_count = findings.len() - silent_count;
+    let duplicate_count = findings.len() - empty_count;
     Report {
         schema_version: 1,
         screen: trace.screen.clone(),
@@ -221,7 +221,7 @@ pub fn analyze(trace: &Trace) -> Report {
             analyzed_count: trace.events.iter().filter(|e| !e.ignored).count(),
             ignored_count: trace.events.iter().filter(|e| e.ignored).count(),
             finding_count: findings.len(),
-            silent_count,
+            empty_count,
             duplicate_count,
         },
         findings,
@@ -233,7 +233,7 @@ fn finding_key(finding: &Finding) -> String {
         "{:?}:{}:{}",
         finding.kind,
         finding.id,
-        normalized(&finding.announcement)
+        normalized(&finding.text)
     )
 }
 
@@ -272,10 +272,10 @@ impl HtmlReport for Report {
     }
     fn summary_html(&self) -> String {
         format!(
-            "<p><strong>{}</strong> findings across {} focus stops: {} silent and {} repeated.</p>",
+            "<p><strong>{}</strong> findings across {} scripted elements: {} empty and {} duplicate.</p>",
             self.summary.finding_count,
             self.summary.analyzed_count,
-            self.summary.silent_count,
+            self.summary.empty_count,
             self.summary.duplicate_count
         )
     }
@@ -339,7 +339,7 @@ mod tests {
     fn finds_seeded_regressions_without_false_positive() {
         let trace = parse_trace(SAMPLE).unwrap();
         let report = analyze(&trace);
-        assert_eq!(report.summary.silent_count, 1);
+        assert_eq!(report.summary.empty_count, 1);
         assert_eq!(report.summary.duplicate_count, 1);
         assert_eq!(report.summary.ignored_count, 1);
         assert!(report.findings.iter().all(|f| f.id != "checkout.separator"));
@@ -347,14 +347,13 @@ mod tests {
 
     #[test]
     fn parses_json_lines_and_assigns_indexes() {
-        let trace = parse_trace("{\"id\":\"one\",\"role\":\"button\",\"announcement\":\"One\"}\n{\"id\":\"two\",\"role\":\"button\",\"announcement\":\"Two\"}").unwrap();
+        let trace = parse_trace("{\"id\":\"one\",\"role\":\"button\",\"text\":\"One\"}\n{\"id\":\"two\",\"role\":\"button\",\"text\":\"Two\"}").unwrap();
         assert_eq!(trace.events[1].index, 2);
     }
 
     #[test]
     fn html_escapes_event_data() {
-        let trace =
-            parse_trace("{\"id\":\"<bad>\",\"role\":\"button\",\"announcement\":\"\"}").unwrap();
+        let trace = parse_trace("{\"id\":\"<bad>\",\"role\":\"button\",\"text\":\"\"}").unwrap();
         let html = render_html(&analyze(&trace));
         assert!(html.contains("&lt;bad&gt;"));
         assert!(!html.contains("<bad>"));

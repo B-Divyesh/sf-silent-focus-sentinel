@@ -9,7 +9,7 @@ use std::process::{Command, ExitCode};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 #[derive(Parser)]
-#[command(name = "silent-focus-sentinel", version, about = "Catch silent and repeated announcements in scripted iOS focus traversals", long_about = None)]
+#[command(name = "silent-focus-sentinel", version, about = "Flag empty or duplicate label/value text in scripted iOS accessibility checks", long_about = None)]
 struct Cli {
     #[command(subcommand)]
     command: Commands,
@@ -17,7 +17,7 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Commands {
-    /// Analyze one JSON or JSONL focus trace
+    /// Analyze one JSON or JSONL scripted-check trace
     Analyze {
         input: PathBuf,
         #[arg(long)]
@@ -27,7 +27,7 @@ enum Commands {
         #[arg(long, value_enum, default_value = "never")]
         fail_on: AnalyzeFailure,
     },
-    /// Run a scripted traversal command and save its JSON Lines output
+    /// Run a scripted check command and save its JSON Lines output
     Record {
         #[arg(long)]
         command: String,
@@ -38,7 +38,7 @@ enum Commands {
         #[arg(long, default_value = "iOS Simulator")]
         platform: String,
     },
-    /// Run an iOS Simulator XCTest traversal and capture its SFS_EVENT lines
+    /// Run xcodebuild and extract marked SFS_EVENT lines
     RecordXctest {
         /// Xcode scheme containing the UI test that calls SilentFocusSentinel.record
         #[arg(long)]
@@ -59,10 +59,10 @@ enum Commands {
         #[arg(long, default_value = "xcodebuild")]
         xcodebuild: PathBuf,
         /// Screen name stored in the trace
-        #[arg(long, default_value = "XCTest traversal")]
+        #[arg(long, default_value = "XCTest scripted check")]
         screen: String,
     },
-    /// Compare baseline and current focus traces
+    /// Compare baseline and current scripted-check traces
     Diff {
         baseline: PathBuf,
         current: PathBuf,
@@ -212,9 +212,9 @@ fn parse_xctest_events(output: &str) -> Result<Trace, String> {
         .collect::<Vec<_>>()
         .join("\n");
     if events.trim().is_empty() {
-        return Err("XCTest completed without SFS_EVENT lines. Add examples/ios/SilentFocusSentinelXCTest.swift to the UI-test target and call SilentFocusSentinel.record for each scripted stop.".into());
+        return Err("xcodebuild completed without SFS_EVENT lines. Add examples/ios/SilentFocusSentinelXCTest.swift to the UI-test target and call SilentFocusSentinel.record for each scripted element.".into());
     }
-    parse_trace(&events).map_err(|error| format!("could not parse XCTest focus events: {error}"))
+    parse_trace(&events).map_err(|error| format!("could not parse marked XCTest events: {error}"))
 }
 
 fn record_xctest(
@@ -261,7 +261,7 @@ fn record_xctest(
     fs::write(output, serde_json::to_string_pretty(&trace).unwrap())
         .map_err(|error| format!("could not write {}: {error}", output.display()))?;
     eprintln!(
-        "Recorded {} XCTest focus stops to {}",
+        "Extracted {} marked XCTest elements to {}",
         trace.events.len(),
         output.display()
     );
@@ -309,7 +309,7 @@ fn run(cli: Cli) -> Result<u8, String> {
             fs::write(&output, serde_json::to_string_pretty(&trace).unwrap())
                 .map_err(|e| format!("could not write {}: {e}", output.display()))?;
             eprintln!(
-                "Recorded {} focus stops to {}",
+                "Recorded {} scripted elements to {}",
                 trace.events.len(),
                 output.display()
             );
@@ -368,7 +368,7 @@ fn run(cli: Cli) -> Result<u8, String> {
             fs::write(&trace_path, sample).map_err(|e| e.to_string())?;
             write_outputs(&analyze(&trace), Some(&json_path), Some(&html_path))?;
             println!("Demo — sample data, nothing was saved outside this temporary directory.");
-            println!("Found 2 issues across 6 checked focus stops.");
+            println!("Found 2 findings across 6 checked elements.");
             println!("JSON: {}", json_path.display());
             println!("HTML: {}", html_path.display());
             Ok(0)
@@ -395,7 +395,7 @@ mod tests {
     #[test]
     fn extracts_marked_xctest_events_from_build_output() {
         let trace = parse_xctest_events(
-            "Test Suite started\nSFS_EVENT:{\"id\":\"checkout.title\",\"role\":\"header\",\"announcement\":\"Checkout, heading\"}\nlog SFS_EVENT:{\"id\":\"checkout.pay\",\"role\":\"button\",\"announcement\":\"Pay now, button\"}",
+            "Test Suite started\nSFS_EVENT:{\"id\":\"checkout.title\",\"role\":\"header\",\"text\":\"Checkout\"}\nlog SFS_EVENT:{\"id\":\"checkout.pay\",\"role\":\"button\",\"text\":\"Pay now\"}",
         )
         .unwrap();
         assert_eq!(trace.events.len(), 2);

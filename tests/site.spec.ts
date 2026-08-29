@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 import { readFileSync } from 'node:fs';
 
-for (const route of ['/', '/demo', '/privacy', '/terms', '/missing']) {
+for (const route of ['/', '/?demo=1', '/demo', '/privacy', '/terms', '/missing']) {
   test(`${route} has one accessible page structure`, async ({ page }) => {
     const errors: string[] = [];
     page.on('console', (message) => { if (message.type() === 'error') errors.push(message.text()); });
@@ -21,7 +21,7 @@ for (const route of ['/', '/demo', '/privacy', '/terms', '/missing']) {
 test('navigation updates URL, title, and heading focus', async ({ page }) => {
   await page.goto('/');
   await page.getByRole('link', { name: 'Try it with sample data' }).click();
-  await expect(page).toHaveURL(/\/demo$/);
+  await expect(page).toHaveURL(/\?demo=1$/);
   await expect(page).toHaveTitle('Demo — Silent Focus Sentinel');
   await expect(page.locator('h1')).toBeFocused();
   await page.goBack();
@@ -35,6 +35,19 @@ test('390px layout keeps content within the viewport', async ({ page }) => {
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
   expect(overflow).toBeLessThanOrEqual(1);
   await expect(page.getByRole('link', { name: 'Try it with sample data' })).toBeVisible();
+});
+
+test('demo is useful on the first mobile screen and resets without touching real storage', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/?demo=1');
+  await page.evaluate(() => localStorage.setItem('real:marker', 'keep'));
+  await expect(page.getByText('Demo — sample data, nothing is saved')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Two elements need review' })).toBeVisible();
+  await expect(page.getByText('2 findings')).toBeVisible();
+  expect((await page.getByText('2 findings').boundingBox())!.y).toBeLessThan(844);
+  await page.getByRole('button', { name: 'Reset demo' }).click();
+  await expect(page.getByRole('button', { name: 'Reset demo' })).toBeFocused();
+  expect(await page.evaluate(() => localStorage.getItem('real:marker'))).toBe('keep');
 });
 
 test('hero artwork never creates horizontal scrolling from tablet through desktop', async ({ page }) => {
@@ -73,12 +86,21 @@ test('all visible controls meet the 44px mobile target and demo focus contrasts 
   await expect(reset).toHaveCSS('outline-color', 'rgb(6, 36, 31)');
 });
 
-test('built static routes are explicit and unknown paths retain a configured 404 response', async () => {
+test('built static routes have specific metadata and unknown paths retain a configured 404 response', async () => {
   const config = JSON.parse(readFileSync('site/public/staticwebapp.config.json', 'utf8'));
   expect(config.navigationFallback).toBeUndefined();
   expect(config.responseOverrides['404'].rewrite).toBe('/404.html');
-  for (const route of ['demo', 'privacy', 'terms']) {
-    expect(readFileSync(`dist/site/${route}/index.html`, 'utf8')).toContain('<!doctype html>');
+  const expected = {
+    'demo/index.html': ['<title>Demo — Silent Focus Sentinel</title>', 'content="https://silent-focus-sentinel.sociobot.in/demo"'],
+    'privacy/index.html': ['<title>Privacy — Silent Focus Sentinel</title>', 'content="https://silent-focus-sentinel.sociobot.in/privacy"'],
+    'terms/index.html': ['<title>Terms — Silent Focus Sentinel</title>', 'content="https://silent-focus-sentinel.sociobot.in/terms"'],
+    '404.html': ['<title>Page not found — Silent Focus Sentinel</title>', 'content="https://silent-focus-sentinel.sociobot.in/404.html"'],
+  };
+  for (const [file, markers] of Object.entries(expected)) {
+    const html = readFileSync(`dist/site/${file}`, 'utf8');
+    for (const marker of markers) expect(html).toContain(marker);
+    expect(html.match(/<meta property="og:title"/g)).toHaveLength(1);
+    expect(html).not.toContain('catch silent focus stops');
   }
 });
 
@@ -91,4 +113,12 @@ test('keyboard reaches the primary action with a visible focus ring', async ({ p
   await expect(action).toBeFocused();
   const outline = await action.evaluate((element) => getComputedStyle(element).outlineStyle);
   expect(outline).not.toBe('none');
+});
+
+test('reduced motion disables the focus pulse', async ({ browser }) => {
+  const context = await browser.newContext({ reducedMotion: 'reduce' });
+  const page = await context.newPage();
+  await page.goto('/');
+  await expect(page.locator('.trace-item .node').first()).toHaveCSS('animation-name', 'none');
+  await context.close();
 });

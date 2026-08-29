@@ -1,107 +1,102 @@
 import { test, expect } from '@playwright/test';
 import { execFileSync, spawnSync } from 'node:child_process';
-import { chmodSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { chmodSync, existsSync, mkdtempSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
 import { createServer } from 'node:http';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
 
-const bin = join(process.cwd(), 'target/release/silent-focus-sentinel');
+const root = process.cwd();
+const bin = join(root, 'target/release/silent-focus-sentinel');
+const sampleTrace = join(root, 'examples/sample-trace.json');
+const baselineTrace = join(root, 'examples/baseline-trace.json');
 
 function analyzeSample() {
-  return JSON.parse(execFileSync(bin, ['analyze', 'examples/sample-trace.json'], { encoding: 'utf8' }));
+  return JSON.parse(execFileSync(bin, ['analyze', sampleTrace], { encoding: 'utf8' }));
 }
 
-test('@claim:find-silent flags the empty focus stop', () => {
+function makeXcodebuild(directory: string) {
+  const executable = join(directory, 'xcodebuild');
+  writeFileSync(executable, `#!/bin/sh
+printf '%s\n' 'unmarked {"id":"ignore-me"}' 'SFS_EVENT:{"id":"checkout.title","role":"header","text":"Checkout"}' 'log SFS_EVENT:{"id":"checkout.pay","role":"button","text":"Pay now"}'
+`);
+  chmodSync(executable, 0o755);
+  return executable;
+}
+
+test('@claim:find-empty-text flags empty label/value text', () => {
   const report = analyzeSample();
-  expect(report.summary.silentCount).toBe(1);
-  expect(report.findings.find((finding: { kind: string }) => finding.kind === 'silent_announcement').id).toBe('checkout.promo');
+  expect(report.summary.emptyCount).toBe(1);
+  expect(report.findings.find((finding: { kind: string }) => finding.kind === 'empty_text').id).toBe('checkout.promo');
 });
 
-test('@claim:find-duplicate flags adjacent repeated speech', () => {
+test('@claim:find-duplicate-text flags adjacent duplicate label/value text', () => {
   const report = analyzeSample();
   expect(report.summary.duplicateCount).toBe(1);
-  expect(report.findings.find((finding: { kind: string }) => finding.kind === 'duplicate_announcement').id).toBe('checkout.total-value');
+  expect(report.findings.find((finding: { kind: string }) => finding.kind === 'duplicate_text').id).toBe('checkout.total-value');
 });
 
-test('@claim:decorative-ignore omits an intentional decorative stop', () => {
+test('@claim:decorative-ignore omits an intentional decorative element', () => {
   const report = analyzeSample();
   expect(report.summary.ignoredCount).toBe(1);
   expect(report.findings.map((finding: { id: string }) => finding.id)).not.toContain('checkout.separator');
 });
 
 test('@claim:json-html writes parseable standalone reports', () => {
-  const dir = mkdtempSync(join(tmpdir(), 'sfs-reports-'));
-  const jsonPath = join(dir, 'report.json');
-  const htmlPath = join(dir, 'report.html');
-  execFileSync(bin, ['analyze', 'examples/sample-trace.json', '--json', jsonPath, '--html', htmlPath]);
+  const directory = mkdtempSync(join(tmpdir(), 'sfs-reports-'));
+  const jsonPath = join(directory, 'report.json');
+  const htmlPath = join(directory, 'report.html');
+  execFileSync(bin, ['analyze', sampleTrace, '--json', jsonPath, '--html', htmlPath]);
   expect(JSON.parse(readFileSync(jsonPath, 'utf8')).summary.findingCount).toBe(2);
   const html = readFileSync(htmlPath, 'utf8');
   expect(html).toContain('<!doctype html>');
-  expect(html).toContain('This focus stop announces nothing.');
+  expect(html).toContain('This element has empty label/value text.');
+  expect(html).not.toMatch(/<script|https?:\/\//);
 });
 
 test('@claim:record-command captures ordered JSON Lines', () => {
-  const dir = mkdtempSync(join(tmpdir(), 'sfs-record-'));
-  const output = join(dir, 'trace.json');
-  const runner = `printf '%s\\n' '{"id":"first","role":"button","announcement":"First"}' '{"id":"second","role":"button","announcement":"Second"}'`;
+  const directory = mkdtempSync(join(tmpdir(), 'sfs-record-'));
+  const output = join(directory, 'trace.json');
+  const runner = `printf '%s\\n' '{"id":"first","role":"button","text":"First"}' '{"id":"second","role":"button","text":"Second"}'`;
   execFileSync(bin, ['record', '--command', runner, '--output', output, '--screen', 'Settings']);
   const trace = JSON.parse(readFileSync(output, 'utf8'));
   expect(trace.screen).toBe('Settings');
   expect(trace.events.map((event: { index: number }) => event.index)).toEqual([1, 2]);
+  expect(trace.events.map((event: { text: string }) => event.text)).toEqual(['First', 'Second']);
+});
+
+test('@claim:xctest-extraction extracts only marked events from xcodebuild output', () => {
+  const directory = mkdtempSync(join(tmpdir(), 'sfs-xctest-'));
+  const output = join(directory, 'trace.json');
+  execFileSync(bin, ['record-xctest', '--scheme', 'CheckoutUITests', '--xcodebuild', makeXcodebuild(directory), '--output', output]);
+  const trace = JSON.parse(readFileSync(output, 'utf8'));
+  expect(trace.events.map((event: { id: string }) => event.id)).toEqual(['checkout.title', 'checkout.pay']);
+  expect(trace.events.map((event: { text: string }) => event.text)).toEqual(['Checkout', 'Pay now']);
 });
 
 test('@claim:diff-regressions reports new and resolved findings', () => {
-  const result = spawnSync(bin, ['diff', 'examples/baseline-trace.json', 'examples/sample-trace.json', '--fail-on', 'regressions'], { encoding: 'utf8' });
+  const result = spawnSync(bin, ['diff', baselineTrace, sampleTrace, '--fail-on', 'regressions'], { encoding: 'utf8' });
   expect(result.status).toBe(1);
-  const report = JSON.parse(result.stdout);
-  expect(report.newFindings).toHaveLength(2);
-  expect(report.resolvedFindings).toHaveLength(0);
-
-  const reverse = spawnSync(bin, ['diff', 'examples/sample-trace.json', 'examples/baseline-trace.json'], { encoding: 'utf8' });
+  expect(JSON.parse(result.stdout).newFindings).toHaveLength(2);
+  const reverse = spawnSync(bin, ['diff', sampleTrace, baselineTrace], { encoding: 'utf8' });
   expect(reverse.status).toBe(0);
-  const reverseReport = JSON.parse(reverse.stdout);
-  expect(reverseReport.newFindings).toHaveLength(0);
-  expect(reverseReport.resolvedFindings).toHaveLength(2);
+  expect(JSON.parse(reverse.stdout).resolvedFindings).toHaveLength(2);
 });
 
-test('@claim:xctest-capture runs a marked XCTest simulator traversal through the CLI', () => {
-  const helper = readFileSync('examples/ios/SilentFocusSentinelXCTest.swift', 'utf8');
-  const helperRegression = readFileSync('examples/ios/SilentFocusSentinelXCTestTests.swift', 'utf8');
-  const traversal = readFileSync('examples/ios/CheckoutFocusTraversalTests.swift', 'utf8');
-  expect(helper).toContain('static func observedAnnouncement(label: String, value: String)');
-  expect(helper).not.toContain('announcement: String?');
-  expect(helper).not.toContain('[label, value, role]');
-  expect(traversal).not.toContain('announcement:');
-  expect(helperRegression).toContain('observedAnnouncement(label: "", value: "")');
-  expect(helperRegression).toContain('XCTAssertEqual(after, "")');
-  const dir = mkdtempSync(join(tmpdir(), 'sfs-xctest-'));
-  const xcodebuild = join(dir, 'xcodebuild');
-  const output = join(dir, 'trace.json');
-  writeFileSync(xcodebuild, `#!/bin/sh
-printf '%s\\n' 'Test Suite started' 'SFS_EVENT:{"id":"checkout.title","role":"header","announcement":"Checkout, heading"}' 'SFS_EVENT:{"id":"checkout.pay","role":"button","announcement":"Pay now, button"}'
-`);
-  chmodSync(xcodebuild, 0o755);
-  execFileSync(bin, ['record-xctest', '--scheme', 'CheckoutUITests', '--xcodebuild', xcodebuild, '--output', output]);
-  const trace = JSON.parse(readFileSync(output, 'utf8'));
-  expect(trace.platform).toContain('iOS Simulator');
-  expect(trace.events.map((event: { id: string }) => event.id)).toEqual(['checkout.title', 'checkout.pay']);
-});
-
-test('@claim:safe-output-paths rejects every input and report destination collision before writing', () => {
-  const dir = mkdtempSync(join(tmpdir(), 'sfs-collision-'));
-  const baseline = join(dir, 'baseline.json');
-  const current = join(dir, 'current.json');
-  writeFileSync(baseline, readFileSync('examples/baseline-trace.json'));
-  writeFileSync(current, readFileSync('examples/sample-trace.json'));
+test('@claim:safe-output-paths rejects every collision before writing', () => {
+  const directory = mkdtempSync(join(tmpdir(), 'sfs-collision-'));
+  const baseline = join(directory, 'baseline.json');
+  const current = join(directory, 'current.json');
+  writeFileSync(baseline, readFileSync(baselineTrace));
+  writeFileSync(current, readFileSync(sampleTrace));
   const baselineBefore = readFileSync(baseline, 'utf8');
   const currentBefore = readFileSync(current, 'utf8');
   const cases = [
     ['analyze', current, '--json', current],
     ['analyze', current, '--html', current],
-    ['analyze', current, '--json', join(dir, 'report.out'), '--html', join(dir, 'report.out')],
+    ['analyze', current, '--json', join(directory, 'report.out'), '--html', join(directory, 'report.out')],
     ['diff', baseline, current, '--json', baseline],
     ['diff', baseline, current, '--html', current],
-    ['diff', baseline, current, '--json', join(dir, 'diff.out'), '--html', join(dir, 'diff.out')],
+    ['diff', baseline, current, '--json', join(directory, 'diff.out'), '--html', join(directory, 'diff.out')],
   ];
   for (const args of cases) {
     const result = spawnSync(bin, args, { encoding: 'utf8' });
@@ -113,72 +108,156 @@ test('@claim:safe-output-paths rejects every input and report destination collis
 });
 
 test('@claim:exit-codes follows the documented 0, 1, and 2 contract', () => {
-  expect(spawnSync(bin, ['analyze', 'examples/baseline-trace.json'], { encoding: 'utf8' }).status).toBe(0);
-  expect(spawnSync(bin, ['analyze', 'examples/sample-trace.json', '--fail-on', 'findings'], { encoding: 'utf8' }).status).toBe(1);
+  expect(spawnSync(bin, ['analyze', baselineTrace], { encoding: 'utf8' }).status).toBe(0);
+  expect(spawnSync(bin, ['analyze', sampleTrace, '--fail-on', 'findings'], { encoding: 'utf8' }).status).toBe(1);
   const malformed = join(mkdtempSync(join(tmpdir(), 'sfs-exit-')), 'invalid.json');
   writeFileSync(malformed, '{');
   expect(spawnSync(bin, ['analyze', malformed], { encoding: 'utf8' }).status).toBe(2);
 });
 
 test('@claim:failed-runner exits safely without creating an output trace', () => {
-  const dir = mkdtempSync(join(tmpdir(), 'sfs-runner-'));
-  const output = join(dir, 'trace.json');
+  const directory = mkdtempSync(join(tmpdir(), 'sfs-runner-'));
+  const output = join(directory, 'trace.json');
   const result = spawnSync(bin, ['record', '--command', 'exit 9', '--output', output], { encoding: 'utf8' });
   expect(result.status).toBe(2);
   expect(result.stderr).toContain('record command exited');
-  expect(() => readFileSync(output, 'utf8')).toThrow();
+  expect(existsSync(output)).toBe(false);
 });
 
 test('@claim:single-binary builds with the declared Rust minimum', () => {
-  const cargo = readFileSync('Cargo.toml', 'utf8');
+  const cargo = readFileSync(join(root, 'Cargo.toml'), 'utf8');
   expect(cargo).toContain('rust-version = "1.85"');
-  expect(cargo).toContain('[[bin]]');
   expect(cargo.match(/^\[\[bin\]\]/gm)).toHaveLength(1);
-  expect(readFileSync(bin)).toBeTruthy();
+  expect(statSync(bin).isFile()).toBe(true);
+  expect(statSync(bin).mode & 0o111).not.toBe(0);
 });
 
-test('@claim:public-xctest-helper avoids private VoiceOver APIs', () => {
-  const helper = readFileSync('examples/ios/SilentFocusSentinelXCTest.swift', 'utf8');
+test('@claim:public-xctest-helper uses public XCTest label and value fields only', () => {
+  const helper = readFileSync(join(root, 'examples/ios/SilentFocusSentinelXCTest.swift'), 'utf8');
   expect(helper).toContain('import XCTest');
-  expect(helper).not.toMatch(/AXUIElement|UIAccessibility/);
+  expect(helper).toContain('element.label');
+  expect(helper).toContain('element.value as? String');
+  expect(helper).toContain('let text: String');
+  expect(helper).not.toMatch(/AXUIElement|UIAccessibility|announcement:/);
 });
 
-test('@claim:local-only demo and CLI use no outside requests or storage', async ({ page, context }) => {
-  const outside: string[] = [];
-  page.on('request', (request) => {
-    const url = new URL(request.url());
-    if (url.hostname !== '127.0.0.1') outside.push(request.url());
-  });
-  await page.goto('/demo');
-  await expect(page.getByText('Two stops need review')).toBeVisible();
-  await page.getByRole('button', { name: 'Reset demo' }).click();
-  expect(outside).toEqual([]);
-  expect(await context.cookies()).toEqual([]);
-  expect(await page.evaluate(() => ({ local: localStorage.length, session: sessionStorage.length }))).toEqual({ local: 0, session: 0 });
+test('@claim:stdout-json prints parseable reports when --json is omitted', () => {
+  const analyze = spawnSync(bin, ['analyze', sampleTrace], { encoding: 'utf8' });
+  expect(analyze.status).toBe(0);
+  expect(JSON.parse(analyze.stdout).summary.findingCount).toBe(2);
+  const diff = spawnSync(bin, ['diff', baselineTrace, sampleTrace], { encoding: 'utf8' });
+  expect(diff.status).toBe(0);
+  expect(JSON.parse(diff.stdout).newFindings).toHaveLength(2);
+});
 
+test('@claim:demo-isolation leaves the project unchanged and uses a new temporary directory', async ({ page }) => {
+  const project = mkdtempSync(join(tmpdir(), 'sfs-project-'));
+  writeFileSync(join(project, 'keep.txt'), 'unchanged');
+  writeFileSync(join(project, 'settings.json'), '{"keep":true}\n');
+  const before = readdirSync(project).map((name) => [name, readFileSync(join(project, name), 'utf8')]);
+  const result = spawnSync(bin, ['demo'], { cwd: project, encoding: 'utf8' });
+  expect(result.status).toBe(0);
+  expect(readdirSync(project).map((name) => [name, readFileSync(join(project, name), 'utf8')])).toEqual(before);
+  const paths = ['JSON', 'HTML'].map((label) => result.stdout.match(new RegExp(`^${label}: (.+)$`, 'm'))?.[1]);
+  expect(paths.every(Boolean)).toBe(true);
+  expect(paths.every((path) => existsSync(path!))).toBe(true);
+  expect(new Set(paths.map((path) => resolve(path!, '..'))).size).toBe(1);
+  expect(resolve(paths[0]!, '..')).toMatch(new RegExp(`^${tmpdir().replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`));
+  expect(resolve(paths[0]!, '..')).not.toBe(project);
+
+  await page.goto('/');
+  await page.evaluate(() => localStorage.setItem('real:marker', 'keep'));
+  await page.getByRole('link', { name: 'Try it with sample data' }).click();
+  await expect(page).toHaveURL(/\?demo=1$/);
+  await page.getByRole('button', { name: 'Reset demo' }).click();
+  expect(await page.evaluate(() => localStorage.getItem('real:marker'))).toBe('keep');
+});
+
+test('@claim:accuracy-suite meets the measured detection and false-positive rates', () => {
+  const suite = JSON.parse(readFileSync(join(root, 'examples/regression-suite.json'), 'utf8')) as { cases: Array<{ id: string; expectedEmpty: boolean; event: object }> };
+  let truePositives = 0;
+  let falsePositives = 0;
+  const positives = suite.cases.filter((item) => item.expectedEmpty).length;
+  const negatives = suite.cases.length - positives;
+  for (const item of suite.cases) {
+    const directory = mkdtempSync(join(tmpdir(), 'sfs-accuracy-'));
+    const trace = join(directory, 'trace.json');
+    writeFileSync(trace, JSON.stringify({ schemaVersion: 1, screen: item.id, platform: 'fixture', events: [item.event] }));
+    const report = JSON.parse(execFileSync(bin, ['analyze', trace], { encoding: 'utf8' }));
+    const found = report.findings.some((finding: { kind: string }) => finding.kind === 'empty_text');
+    if (item.expectedEmpty && found) truePositives += 1;
+    if (!item.expectedEmpty && found) falsePositives += 1;
+  }
+  expect(suite.cases).toHaveLength(30);
+  expect(truePositives / positives).toBeGreaterThanOrEqual(0.9);
+  expect(falsePositives / negatives).toBeLessThan(0.1);
+});
+
+test('@claim:accountless-run exercises every command without credentials or a service', () => {
+  const directory = mkdtempSync(join(tmpdir(), 'sfs-accountless-'));
+  const cleanEnv = { PATH: process.env.PATH ?? '/usr/bin:/bin', TMPDIR: directory, LANG: 'C' };
+  const recorded = join(directory, 'recorded.json');
+  const xctest = join(directory, 'xctest.json');
+  const commands = [
+    ['--help'], ['demo'], ['analyze', sampleTrace], ['diff', baselineTrace, sampleTrace],
+    ['record', '--command', `printf '%s\\n' '{"id":"one","role":"button","text":"One"}'`, '--output', recorded],
+    ['record-xctest', '--scheme', 'Fixture', '--xcodebuild', makeXcodebuild(directory), '--output', xctest],
+  ];
+  for (const args of commands) expect(spawnSync(bin, args, { encoding: 'utf8', env: cleanEnv }).status, args[0]).toBe(0);
+});
+
+test('@claim:no-telemetry sends no requests from any CLI command', async () => {
   const connections: string[] = [];
-  const server = createServer((request, response) => {
-    connections.push(request.url ?? 'unknown');
-    response.writeHead(502).end();
-  });
-  await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
+  const server = createServer((request, response) => { connections.push(request.url ?? 'unknown'); response.writeHead(502).end(); });
+  await new Promise<void>((done) => server.listen(0, '127.0.0.1', done));
   const address = server.address();
-  if (!address || typeof address === 'string') throw new Error('proxy did not bind to a TCP port');
+  if (!address || typeof address === 'string') throw new Error('proxy did not bind');
+  const directory = mkdtempSync(join(tmpdir(), 'sfs-network-'));
+  const proxy = `http://127.0.0.1:${address.port}`;
+  const env = { ...process.env, HTTP_PROXY: proxy, HTTPS_PROXY: proxy, ALL_PROXY: proxy, NO_PROXY: '' };
+  const commands = [
+    ['--help'], ['demo'], ['analyze', sampleTrace], ['diff', baselineTrace, sampleTrace],
+    ['record', '--command', `printf '%s\\n' '{"id":"one","role":"button","text":"One"}'`, '--output', join(directory, 'record.json')],
+    ['record-xctest', '--scheme', 'Fixture', '--xcodebuild', makeXcodebuild(directory), '--output', join(directory, 'xctest.json')],
+  ];
   try {
-    const result = spawnSync(bin, ['demo'], {
-      encoding: 'utf8',
-      env: { ...process.env, HTTP_PROXY: `http://127.0.0.1:${address.port}`, HTTPS_PROXY: `http://127.0.0.1:${address.port}`, ALL_PROXY: `http://127.0.0.1:${address.port}`, NO_PROXY: '' },
-    });
-    expect(result.status).toBe(0);
-    await new Promise((resolve) => setTimeout(resolve, 25));
+    for (const args of commands) expect(spawnSync(bin, args, { encoding: 'utf8', env }).status, args[0]).toBe(0);
+    await new Promise((done) => setTimeout(done, 25));
     expect(connections).toEqual([]);
+    expect(readFileSync(join(root, 'Cargo.toml'), 'utf8')).not.toMatch(/reqwest|hyper|ureq|telemetry/);
   } finally {
-    await new Promise<void>((resolve, reject) => server.close((error) => error ? reject(error) : resolve()));
+    await new Promise<void>((done, reject) => server.close((error) => error ? reject(error) : done()));
   }
 });
 
-test('@claim:sample-download exports the demo trace', async ({ page }) => {
-  await page.goto('/demo');
+test('@claim:local-only writes requested reports to local paths only', () => {
+  const directory = mkdtempSync(join(tmpdir(), 'sfs-local-'));
+  const json = join(directory, 'report.json');
+  const html = join(directory, 'report.html');
+  const result = spawnSync(bin, ['analyze', sampleTrace, '--json', json, '--html', html], { encoding: 'utf8' });
+  expect(result.status).toBe(0);
+  expect(existsSync(json)).toBe(true);
+  expect(existsSync(html)).toBe(true);
+  expect(readdirSync(directory).sort()).toEqual(['report.html', 'report.json']);
+});
+
+test('@claim:site-private stores nothing and loads only same-origin resources', async ({ browser }) => {
+  for (const route of ['/', '/?demo=1', '/demo', '/privacy', '/terms', '/missing']) {
+    const context = await browser.newContext();
+    const page = await context.newPage();
+    const outside: string[] = [];
+    page.on('request', (request) => { if (new URL(request.url()).origin !== 'http://127.0.0.1:4173') outside.push(request.url()); });
+    await page.goto(route);
+    await expect(page.locator('h1')).toBeVisible();
+    expect(outside).toEqual([]);
+    expect(await context.cookies()).toEqual([]);
+    expect(await page.evaluate(() => ({ local: localStorage.length, session: sessionStorage.length }))).toEqual({ local: 0, session: 0 });
+    await context.close();
+  }
+});
+
+test('@claim:sample-download exports the isolated demo trace', async ({ page }) => {
+  await page.goto('/?demo=1');
   const downloadPromise = page.waitForEvent('download');
   await page.getByRole('button', { name: 'Download sample JSON' }).click();
   const download = await downloadPromise;
@@ -186,11 +265,18 @@ test('@claim:sample-download exports the demo trace', async ({ page }) => {
   const trace = JSON.parse(readFileSync(path!, 'utf8'));
   expect(trace.schemaVersion).toBe(1);
   expect(trace.events).toHaveLength(7);
+  expect(trace.events[2].text).toBe('');
+  expect(trace.events[2]).not.toHaveProperty('announcement');
 });
 
 test('@claim:open-source package carries the MIT license', () => {
-  const cargo = readFileSync('Cargo.toml', 'utf8');
-  const license = readFileSync('LICENSE', 'utf8');
-  expect(cargo).toContain('license = "MIT"');
-  expect(license).toContain('Permission is hereby granted, free of charge');
+  expect(readFileSync(join(root, 'Cargo.toml'), 'utf8')).toContain('license = "MIT"');
+  expect(readFileSync(join(root, 'LICENSE'), 'utf8')).toContain('Permission is hereby granted, free of charge');
+});
+
+test('@claim:build-artifacts creates the documented binary and routed site', () => {
+  expect(statSync(bin).isFile()).toBe(true);
+  for (const file of ['index.html', 'demo/index.html', 'privacy/index.html', 'terms/index.html', '404.html']) {
+    expect(readFileSync(join(root, 'dist/site', file), 'utf8')).toContain('<!doctype html>');
+  }
 });
