@@ -70,6 +70,13 @@ final class SilentFocusSentinelVoiceOverCapture {
         appendFocusedElement(element)
     }
 
+    /// Records the element targeted by a public accessibility focus move in
+    /// the bundled deterministic example. Production integrations should rely
+    /// on the focus notification observer above.
+    func captureScriptedFocusStop(_ element: NSObject) {
+        appendFocusedElement(element)
+    }
+
     /// Prints JSON Lines that `record-xctest` extracts from xcodebuild output.
     /// Keep this call in the app after the UI test has completed its traversal.
     func emitCapturedTrace() {

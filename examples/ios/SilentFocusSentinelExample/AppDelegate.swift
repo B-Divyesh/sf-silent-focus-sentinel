@@ -19,6 +19,9 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
         checkout.captureCurrentFocus = { [weak self] in
             self?.capture.captureCurrentVoiceOverFocus()
         }
+        checkout.captureScriptedFocus = { [weak self] element in
+            self?.capture.captureScriptedFocusStop(element)
+        }
         let window = UIWindow(frame: UIScreen.main.bounds)
         window.rootViewController = checkout
         window.makeKeyAndVisible()
