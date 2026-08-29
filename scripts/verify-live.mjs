@@ -4,12 +4,13 @@ import assert from 'node:assert/strict';
 import { mkdir } from 'node:fs/promises';
 
 const origin = process.argv[2] ?? 'https://silent-focus-sentinel.sociobot.in';
+const deploymentOrigin = 'https://silent-focus-sentinel.sociobot.in';
 const evidence = '.factory/evidence/polish-2';
 await mkdir(evidence, { recursive: true });
 
 const browser = await chromium.launch();
 const routes = [
-  ['/', 200, 'Silent Focus Sentinel — flag empty iOS text'],
+  ['/', 200, 'Silent Focus Sentinel — catch silent VoiceOver stops'],
   ['/demo', 200, 'Demo — Silent Focus Sentinel'],
   ['/?demo=1', 200, 'Demo — Silent Focus Sentinel'],
   ['/privacy', 200, 'Privacy — Silent Focus Sentinel'],
@@ -87,7 +88,7 @@ try {
     const html = await response.text();
     assert.ok(html.includes(`<title>${title}</title>`), `${route} raw title`);
     assert.ok(html.includes(`content="${title}"`), `${route} raw social title`);
-    assert.ok(html.includes(`content="${origin}${route.startsWith('/definitely') ? '/404.html' : route}"`), `${route} raw canonical social URL`);
+    assert.ok(html.includes(`content="${deploymentOrigin}${route.startsWith('/definitely') ? '/404.html' : route}"`), `${route} raw canonical social URL`);
   }
 
   const crawlContext = await browser.newContext();

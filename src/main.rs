@@ -9,7 +9,7 @@ use std::process::{Command, ExitCode};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 #[derive(Parser)]
-#[command(name = "silent-focus-sentinel", version, about = "Flag empty or duplicate label/value text in scripted iOS accessibility checks", long_about = None)]
+#[command(name = "silent-focus-sentinel", version, about = "Flag silent or repeated VoiceOver focus stops from iOS Simulator captures", long_about = None)]
 struct Cli {
     #[command(subcommand)]
     command: Commands,
@@ -38,9 +38,9 @@ enum Commands {
         #[arg(long, default_value = "iOS Simulator")]
         platform: String,
     },
-    /// Run xcodebuild and extract marked SFS_EVENT lines
+    /// Run xcodebuild and extract ordered Simulator VoiceOver focus stops
     RecordXctest {
-        /// Xcode scheme containing the UI test that calls SilentFocusSentinel.record
+        /// Xcode scheme containing the app capture and UI test
         #[arg(long)]
         scheme: String,
         /// Where to write the captured trace object
@@ -59,7 +59,7 @@ enum Commands {
         #[arg(long, default_value = "xcodebuild")]
         xcodebuild: PathBuf,
         /// Screen name stored in the trace
-        #[arg(long, default_value = "XCTest scripted check")]
+        #[arg(long, default_value = "VoiceOver simulator traversal")]
         screen: String,
     },
     /// Compare baseline and current scripted-check traces
@@ -202,17 +202,22 @@ fn ensure_parent(path: &Path) -> Result<(), String> {
 }
 
 fn parse_xctest_events(output: &str) -> Result<Trace, String> {
-    const MARKER: &str = "SFS_EVENT:";
+    const VOICEOVER_MARKER: &str = "SFS_VOICEOVER_STOP:";
+    const LEGACY_MARKER: &str = "SFS_EVENT:";
     let events = output
         .lines()
         .filter_map(|line| {
-            line.find(MARKER)
-                .map(|position| &line[position + MARKER.len()..])
+            line.find(VOICEOVER_MARKER)
+                .map(|position| &line[position + VOICEOVER_MARKER.len()..])
+                .or_else(|| {
+                    line.find(LEGACY_MARKER)
+                        .map(|position| &line[position + LEGACY_MARKER.len()..])
+                })
         })
         .collect::<Vec<_>>()
         .join("\n");
     if events.trim().is_empty() {
-        return Err("xcodebuild completed without SFS_EVENT lines. Add examples/ios/SilentFocusSentinelXCTest.swift to the UI-test target and call SilentFocusSentinel.record for each scripted element.".into());
+        return Err("xcodebuild completed without SFS_VOICEOVER_STOP lines. Add examples/ios/SilentFocusSentinelVoiceOverCapture.swift to the app target, start its observer before the traversal, and print its trace after the test.".into());
     }
     parse_trace(&events).map_err(|error| format!("could not parse marked XCTest events: {error}"))
 }
@@ -261,7 +266,7 @@ fn record_xctest(
     fs::write(output, serde_json::to_string_pretty(&trace).unwrap())
         .map_err(|error| format!("could not write {}: {error}", output.display()))?;
     eprintln!(
-        "Extracted {} marked XCTest elements to {}",
+        "Extracted {} ordered Simulator focus stops to {}",
         trace.events.len(),
         output.display()
     );
@@ -309,7 +314,7 @@ fn run(cli: Cli) -> Result<u8, String> {
             fs::write(&output, serde_json::to_string_pretty(&trace).unwrap())
                 .map_err(|e| format!("could not write {}: {e}", output.display()))?;
             eprintln!(
-                "Recorded {} scripted elements to {}",
+                "Recorded {} focus stops to {}",
                 trace.events.len(),
                 output.display()
             );
@@ -405,7 +410,18 @@ mod tests {
     #[test]
     fn explains_when_xctest_helper_emits_nothing() {
         let error = parse_xctest_events("Test Suite finished").unwrap_err();
-        assert!(error.contains("SFS_EVENT"));
+        assert!(error.contains("SFS_VOICEOVER_STOP"));
+    }
+
+    #[test]
+    fn extracts_a_silent_stop_not_named_by_the_xctest_caller() {
+        let trace = parse_xctest_events(
+            "SFS_VOICEOVER_STOP:{\"index\":1,\"id\":\"checkout.title\",\"role\":\"header\",\"announcement\":\"Checkout\",\"capture\":\"voiceover_simulator\"}\nSFS_VOICEOVER_STOP:{\"index\":2,\"id\":\"checkout.surprise\",\"role\":\"other\",\"announcement\":\"\",\"capture\":\"voiceover_simulator\"}",
+        )
+        .unwrap();
+        assert_eq!(trace.events[1].id, "checkout.surprise");
+        assert_eq!(trace.events[1].effective_announcement(), "");
+        assert_eq!(trace.events[1].capture, "voiceover_simulator");
     }
 
     #[test]

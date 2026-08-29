@@ -1,5 +1,5 @@
 // Add this alongside SilentFocusSentinelXCTest.swift in the UI-test target.
-// It exercises the helper's label/value derivation.
+// It exercises the legacy JSONL helper's label/value derivation.
 import XCTest
 
 final class SilentFocusSentinelXCTestTests: XCTestCase {

@@ -1,1 +1,1 @@
-Find empty or duplicate label/value text in scripted iOS XCTest checks.
+Catch silent or repeated VoiceOver focus stops in iOS Simulator runs.

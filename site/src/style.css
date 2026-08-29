@@ -16,7 +16,7 @@ button{min-width:44px;min-height:44px}
 /* The artwork may bleed within its scene, never into the document viewport. */
 html,body{overflow-x:clip}.hero{overflow:clip}
 
-/* Empty label/value text keeps the product's existing coral gap treatment. */
+/* A silent VoiceOver stop keeps the product's existing coral gap treatment. */
 .empty .node{width:17px;height:17px;margin-left:5px;border-color:var(--coral);box-shadow:0 0 18px var(--coral)}
 .empty .state-label{color:var(--coral)}
 

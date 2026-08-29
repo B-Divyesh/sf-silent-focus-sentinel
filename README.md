@@ -1,12 +1,12 @@
 # Silent Focus Sentinel
 
-Flag empty or duplicate label/value text in scripted iOS accessibility checks.
+Catch silent or repeated VoiceOver focus stops in scripted iOS Simulator runs.
 
-Silent Focus Sentinel is a local command-line tool for iOS teams. Your XCTest chooses the elements and their order.
+Silent Focus Sentinel is a local command-line tool for iOS teams and VoiceOver users. It records an observed simulator focus traversal and checks its effective announcements.
 
-The helper reads each element's public XCTest label and string value. The CLI writes JSON and HTML findings.
+The app-target helper observes public VoiceOver focus notifications. The CLI writes JSON and HTML findings.
 
-It does not observe the VoiceOver cursor, speech, traits, or hints. It does not certify Web Content Accessibility Guidelines (WCAG) conformance.
+It records labels, values, and hints at each observed stop. It does not record VoiceOver audio or certify Web Content Accessibility Guidelines (WCAG) conformance.
 
 ## Try the bundled demo
 
@@ -29,13 +29,15 @@ silent-focus-sentinel --help
 
 Every command runs without an account, credentials, or runtime service.
 
-## Extract marked XCTest output
+## Capture a Simulator VoiceOver traversal
 
-Copy [`examples/ios/SilentFocusSentinelXCTest.swift`](examples/ios/SilentFocusSentinelXCTest.swift) into your UI-test target.
+Copy [`examples/ios/SilentFocusSentinelVoiceOverCapture.swift`](examples/ios/SilentFocusSentinelVoiceOverCapture.swift) into your app target. It uses public `UIAccessibility.elementFocusedNotification` callbacks, so it records the focus order VoiceOver actually enters.
 
-Choose an explicit element order as shown in [`examples/ios/CheckoutFocusTraversalTests.swift`](examples/ios/CheckoutFocusTraversalTests.swift).
+Start it when the app launches with `--silent-focus-sentinel-capture`. After your scripted VoiceOver gestures finish, call `emitCapturedTrace()`. See [`examples/ios/CheckoutFocusTraversalTests.swift`](examples/ios/CheckoutFocusTraversalTests.swift).
 
-Each `SilentFocusSentinel.record(...)` call prints one marked `SFS_EVENT:` line with the element's current label/value text.
+Add [`examples/ios/SilentFocusSentinelVoiceOverCaptureTests.swift`](examples/ios/SilentFocusSentinelVoiceOverCaptureTests.swift) to an app test target. Run those native tests on the same Simulator configuration as the traversal.
+
+The observer is not given a caller-selected element list. It records an inserted silent stop when VoiceOver reaches it. Each captured stop prints one `SFS_VOICEOVER_STOP:` JSON line with its order and effective announcement.
 
 ```sh
 silent-focus-sentinel record-xctest \
@@ -45,19 +47,19 @@ silent-focus-sentinel record-xctest \
   --output artifacts/checkout-trace.json
 ```
 
-`record-xctest` starts `xcodebuild test`. It extracts marked lines from the command output and saves a trace JSON file.
+`record-xctest` starts `xcodebuild test`. It extracts the ordered Simulator stops from command output and saves a trace JSON file.
 
-XCTest does not expose the VoiceOver cursor or speech. Your test chooses the elements; this tool does not validate VoiceOver navigation.
+UIKit does not expose VoiceOver's audio buffer. `announcement` is the effective public announcement built from the focused element's label, value, and hint at the observed stop.
 
 ## Record another scripted check
 
-Your runner prints one JSON object per element. Each line needs `id`, `role`, and `text`.
+Your runner prints one JSON object per focus stop. Each line needs `id`, `role`, and either `announcement` or legacy `text`.
 
 The optional fields are `label`, `value`, `hint`, and `ignored`.
 
 ```json
-{"id":"checkout.title","role":"header","label":"Checkout","text":"Checkout"}
-{"id":"checkout.offer","role":"button","label":"","text":""}
+{"id":"checkout.title","role":"header","announcement":"Checkout","capture":"voiceover_simulator"}
+{"id":"checkout.offer","role":"button","announcement":"","capture":"voiceover_simulator"}
 ```
 
 Capture and analyze it:
@@ -93,18 +95,18 @@ The CLI rejects a collision before writing anything.
 ## Event format
 
 ```json
-{"schemaVersion":1,"screen":"Checkout","platform":"iOS Simulator 18.2","events":[{"index":1,"id":"checkout.pay","role":"button","label":"Pay now","value":"$42.00","hint":"Completes the order","text":"Pay now, $42.00","ignored":false}]}
+{"schemaVersion":1,"screen":"Checkout","platform":"iOS Simulator 18.2 VoiceOver","events":[{"index":1,"id":"checkout.pay","role":"button","label":"Pay now","value":"$42.00","hint":"Completes the order","announcement":"Pay now, $42.00, Completes the order","capture":"voiceover_simulator","ignored":false}]}
 ```
 
-An empty finding means trimmed `text` is empty. A duplicate finding means normalized `text` matches the previous non-ignored element.
+An empty finding means the trimmed effective announcement is empty. A duplicate finding means the normalized effective announcement matches the previous non-ignored stop. Simulator captures use `announcement`; old scripted JSONL traces can keep using `text`.
 
 Set `ignored: true` for an intentional decorative or non-focusable element.
 
 ## Regression accuracy
 
-[`examples/regression-suite.json`](examples/regression-suite.json) covers 30 cases across labels, values, whitespace, hints, roles, dynamic text, and ignored elements.
+[`examples/voiceover-observed-regression-suite.json`](examples/voiceover-observed-regression-suite.json) contains a 30-stop observed Simulator traversal. It includes silent stops outside a caller-selected list, populated hint/value stops, and repeated announcements. [`examples/regression-suite.json`](examples/regression-suite.json) remains a legacy label/value unit fixture.
 
-The suite detects at least 90% of intentional empty-text cases. It keeps the empty-text false-positive rate below 10%.
+The observed suite detects at least 90% of intentional silent stops. It keeps the silent-stop false-positive rate below 10%.
 
 ## Exit codes
 

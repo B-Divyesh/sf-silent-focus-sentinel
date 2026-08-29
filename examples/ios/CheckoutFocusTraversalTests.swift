@@ -1,31 +1,19 @@
-// Example integration. Replace these accessibility identifiers with your app's stops.
+// Example UI-test integration. The capture observer belongs in the app target.
+// In the app delegate, when launchArguments contains
+// SilentFocusSentinelVoiceOverCapture.launchArgument, call capture.start();
+// after this test's scripted VoiceOver swipes finish, call capture.emitCapturedTrace().
+// The app observer receives every focused stop, including nodes this test never names.
 import XCTest
 
 final class CheckoutFocusTraversalTests: XCTestCase {
     func testCheckoutFocusTraversal() {
         let app = XCUIApplication()
+        app.launchArguments += ["--silent-focus-sentinel-capture"]
         app.launch()
 
-        SilentFocusSentinel.record(
-            app.staticTexts["checkout.title"],
-            id: "checkout.title",
-            role: "header"
-        )
-        SilentFocusSentinel.record(
-            app.buttons["checkout.promo"],
-            id: "checkout.promo",
-            role: "button"
-        )
-        SilentFocusSentinel.record(
-            app.images["checkout.separator"],
-            id: "checkout.separator",
-            role: "image",
-            ignored: true
-        )
-        SilentFocusSentinel.record(
-            app.buttons["checkout.pay"],
-            id: "checkout.pay",
-            role: "button"
-        )
+        // Perform the same VoiceOver next-item gestures your release test uses.
+        // Do not call record(element:) here: the app-side observer is the source
+        // of truth and discovers an inserted silent stop automatically.
+        XCTAssertTrue(app.buttons["checkout.pay"].waitForExistence(timeout: 5))
     }
 }

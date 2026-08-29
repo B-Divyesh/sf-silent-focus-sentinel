@@ -5,7 +5,7 @@ type Route = '/' | '/demo' | '/privacy' | '/terms' | '/404';
 const sample = [
   { index: 1, id: 'checkout.title', role: 'header', text: 'Checkout', state: 'ok' },
   { index: 2, id: 'checkout.address', role: 'button', text: 'Delivery address, 14 Oak Street', state: 'ok' },
-  { index: 3, id: 'checkout.promo', role: 'button', text: 'Empty label/value text', state: 'empty' },
+  { index: 3, id: 'checkout.promo', role: 'button', text: 'No announcement', state: 'empty' },
   { index: 4, id: 'checkout.total-label', role: 'staticText', text: 'Total, $42.00', state: 'ok' },
   { index: 5, id: 'checkout.total-value', role: 'staticText', text: 'Total, $42.00', state: 'duplicate' },
   { index: 6, id: 'checkout.separator', role: 'image', text: 'Ignored decorative element', state: 'ignored' },
@@ -13,8 +13,8 @@ const sample = [
 ] as const;
 
 const metadata: Record<Route, { title: string; description: string; canonical: string }> = {
-  '/': { title: 'Silent Focus Sentinel — flag empty iOS text', description: 'Flag empty or duplicate label/value text in an app-defined XCTest order. Review local JSON and HTML reports.', canonical: 'https://silent-focus-sentinel.sociobot.in/' },
-  '/demo': { title: 'Demo — Silent Focus Sentinel', description: 'Review seven sample XCTest elements with empty text, duplicate text, and an ignored decorative element.', canonical: 'https://silent-focus-sentinel.sociobot.in/demo' },
+  '/': { title: 'Silent Focus Sentinel — catch silent VoiceOver stops', description: 'Capture ordered iOS Simulator VoiceOver stops. Flag silent or repeated announcements in local JSON and HTML reports.', canonical: 'https://silent-focus-sentinel.sociobot.in/' },
+  '/demo': { title: 'Demo — Silent Focus Sentinel', description: 'Review a captured VoiceOver traversal with silent, repeated, and ignored focus stops.', canonical: 'https://silent-focus-sentinel.sociobot.in/demo' },
   '/privacy': { title: 'Privacy — Silent Focus Sentinel', description: 'Read how Silent Focus Sentinel handles local trace files and website data.', canonical: 'https://silent-focus-sentinel.sociobot.in/privacy' },
   '/terms': { title: 'Terms — Silent Focus Sentinel', description: 'Read the license, purpose, and warranty terms for Silent Focus Sentinel.', canonical: 'https://silent-focus-sentinel.sociobot.in/terms' },
   '/404': { title: 'Page not found — Silent Focus Sentinel', description: 'This page does not exist. Return to Silent Focus Sentinel.', canonical: 'https://silent-focus-sentinel.sociobot.in/404.html' },
@@ -31,7 +31,7 @@ function shell(content: string, demoMode = false) {
       <nav aria-label="Main navigation"><a href="/demo" data-link>Demo</a><a href="/#install" data-link>Install</a><a href="/privacy" data-link>Privacy</a></nav>
     </header>
     <main id="main" tabindex="-1">${content}</main>
-    <footer><div><a class="wordmark" href="/" data-link>${mark}<span>Silent Focus Sentinel</span></a><p>Local checks for empty or duplicate label/value text.</p></div><nav aria-label="Footer navigation"><a href="/privacy" data-link>Privacy</a><a href="/terms" data-link>Terms</a><a href="https://hello-factory.sociobot.in/">Built by Param Factory <span class="sr-only">(external site)</span></a></nav><p class="build">v0.1.0 · build 2026.08.29</p></footer>
+    <footer><div><a class="wordmark" href="/" data-link>${mark}<span>Silent Focus Sentinel</span></a><p>Local checks for silent or repeated VoiceOver focus stops.</p></div><nav aria-label="Footer navigation"><a href="/privacy" data-link>Privacy</a><a href="/terms" data-link>Terms</a><a href="https://hello-factory.sociobot.in/">Built by Param Factory <span class="sr-only">(external site)</span></a></nav><p class="build">v0.1.0 · build 2026.08.29</p></footer>
     <div class="sr-only" aria-live="polite" id="route-status"></div>`;
 }
 
@@ -46,29 +46,29 @@ function trace(showDetail = false) {
 function home() {
   return shell(`
     <section class="hero">
-      <div class="hero-copy"><span class="eyebrow">LOCAL iOS ACCESSIBILITY CHECK</span><h1>Flag empty text in scripted iOS checks</h1><p class="dek">For iOS teams comparing labels and values in an app-defined XCTest order.</p><div class="hero-actions"><a class="primary" href="/demo" data-link>Try it with sample data</a><span>Opens a finished sample report</span></div><ul class="facts"><li>No upload</li><li>Works without an account</li><li>MIT licensed</li></ul></div>
-      <figure class="hero-art"><img src="/focus-landscape.webp" width="1200" height="800" fetchpriority="high" alt="A luminous sequence of check points with one coral gap."/><figcaption>Aqua marks populated text. Coral marks empty label/value text.</figcaption></figure>
+      <div class="hero-copy"><span class="eyebrow">LOCAL iOS ACCESSIBILITY CHECK</span><h1>Catch silent VoiceOver focus stops</h1><p class="dek">For iOS teams who need to catch missing or repeated announcements before release.</p><div class="hero-actions"><a class="primary" href="/demo" data-link>Try it with sample data</a><span>Opens a finished sample report</span></div><ul class="facts"><li>No upload</li><li>Works without an account</li><li>MIT licensed</li></ul></div>
+      <figure class="hero-art"><img src="/focus-landscape.webp" width="1200" height="800" fetchpriority="high" alt="A luminous sequence of VoiceOver focus stops with one coral silent gap."/><figcaption>Aqua marks announcements. Coral marks silent focus stops.</figcaption></figure>
     </section>
     <div class="signal-divider" aria-hidden="true"><span></span><i></i><span></span><i class="danger"></i><span></span></div>
     ${trace()}
-    <section class="workflow" aria-labelledby="workflow-title"><span class="eyebrow">THREE COMMANDS</span><h2 id="workflow-title">How the CLI checks a scripted run</h2><ol><li><span>01</span><div><h3>Mark each element</h3><p>Use the XCTest helper in your app-defined order.</p><code>SilentFocusSentinel.record(element, id: "…", role: "…")</code></div></li><li><span>02</span><div><h3>Extract the text</h3><p>Run xcodebuild and collect each marked label and value.</p><code>silent-focus-sentinel record-xctest --scheme "…"</code></div></li><li><span>03</span><div><h3>Review the findings</h3><p>Compare empty or duplicate text with your baseline.</p><code>silent-focus-sentinel diff baseline.json current.json</code></div></li></ol></section>
+    <section class="workflow" aria-labelledby="workflow-title"><span class="eyebrow">THREE COMMANDS</span><h2 id="workflow-title">How the CLI checks a simulator traversal</h2><ol><li><span>01</span><div><h3>Start the observer</h3><p>Add the public UIKit capture to your app target.</p><code>capture.start()</code></div></li><li><span>02</span><div><h3>Run VoiceOver</h3><p>Run your iOS Simulator traversal and emit its ordered stops.</p><code>silent-focus-sentinel record-xctest --scheme "…"</code></div></li><li><span>03</span><div><h3>Review the findings</h3><p>Compare silent or repeated announcements with your baseline.</p><code>silent-focus-sentinel diff baseline.json current.json</code></div></li></ol></section>
     <section class="terminal-section" aria-labelledby="terminal-title"><div><span class="eyebrow">BUNDLED SAMPLE</span><h2 id="terminal-title">Run the bundled CLI demo</h2><p>The demo copies a checkout trace into a new temporary directory. It writes both report formats there.</p></div><figure class="terminal-recording"><img src="/demo-recording.svg" width="760" height="420" alt="Terminal recording: silent-focus-sentinel demo reports that sample data stays in a temporary directory, finds two findings across six checked elements, and writes JSON and HTML reports."/><figcaption><details><summary>Read the terminal transcript</summary><pre>$ silent-focus-sentinel demo
 
 Demo — sample data, nothing was saved outside this temporary directory.
 Found 2 findings across 6 checked elements.
 JSON: /tmp/silent-focus-sentinel-demo-…/focus-report.json
 HTML: /tmp/silent-focus-sentinel-demo-…/focus-report.html</pre></details></figcaption></figure></section>
-    <section class="limits" aria-labelledby="limits-title"><div><span class="eyebrow">CLEAR BOUNDARIES</span><h2 id="limits-title">Know what the check measures</h2></div><div><p>The helper reads each selected element's public XCTest label and string value.</p><p>It does not observe the VoiceOver cursor, speech, traits, or hints.</p><p>It does not certify Web Content Accessibility Guidelines (WCAG) conformance. Ignore a decorative element with <code>ignored: true</code>.</p></div></section>
+    <section class="limits" aria-labelledby="limits-title"><div><span class="eyebrow">CLEAR BOUNDARIES</span><h2 id="limits-title">Know what the check measures</h2></div><div><p>The app observer records public VoiceOver focus notifications in simulator order.</p><p>It captures labels, values, and hints at each observed stop. It does not record VoiceOver audio.</p><p>It does not certify Web Content Accessibility Guidelines (WCAG) conformance. Ignore a decorative element with <code>ignored: true</code>.</p></div></section>
     <section class="install" id="install" aria-labelledby="install-title"><span class="eyebrow">RUST 1.85+</span><h2 id="install-title">Install one local binary</h2><div class="command"><code tabindex="0" aria-label="Install command">cargo install --git https://github.com/B-Divyesh/sf-silent-focus-sentinel</code><button data-copy>Copy install command</button></div><p>Run every command without an account or runtime service.</p></section>`);
 }
 
 function demo() {
-  return shell(`<section class="page-intro"><span class="eyebrow">BUNDLED CHECKOUT TRACE</span><h1>Review a sample scripted check</h1><p>Seven elements include one empty-text finding, one duplicate-text finding, and one ignored decorative element.</p></section>${trace(true)}<section class="demo-notes" aria-labelledby="demo-notes"><h2 id="demo-notes">What this sample shows</h2><ul><li>The promo button has empty label/value text.</li><li>The second total has duplicate label/value text.</li><li>The decorative separator is an ignored element.</li></ul><a class="primary" href="/#install" data-link>Install the CLI</a></section>`, true);
+  return shell(`<section class="page-intro"><span class="eyebrow">BUNDLED CHECKOUT TRACE</span><h1>Review a sample VoiceOver traversal</h1><p>Seven stops include one silent finding, one repeated finding, and one ignored decorative stop.</p></section>${trace(true)}<section class="demo-notes" aria-labelledby="demo-notes"><h2 id="demo-notes">What this sample shows</h2><ul><li>The promo button has no announcement.</li><li>The second total repeats the previous announcement.</li><li>The decorative separator is an ignored focus stop.</li></ul><a class="primary" href="/#install" data-link>Install the CLI</a></section>`, true);
 }
 
 function policy(kind: 'privacy' | 'terms') {
   const privacy = kind === 'privacy';
-  return shell(`<article class="prose"><span class="eyebrow">LAST UPDATED · AUGUST 29, 2026</span><h1>${privacy ? 'Your traces stay on your machine' : 'Use the tool as provided'}</h1>${privacy ? `<h2>CLI data</h2><p>The CLI reads the trace paths you provide. It writes reports only to chosen paths or a new demo directory.</p><h2>Website data</h2><p>This site stores no trace data, cookies, or browser data. It loads no third-party scripts, fonts, or analytics.</p><h2>Network access</h2><p>The CLI has no telemetry and makes no network requests. The site loads its files from this domain only.</p>` : `<h2>License</h2><p>Silent Focus Sentinel is free software under the MIT license.</p><h2>Purpose</h2><p>The tool checks label/value text from selected XCTest elements. It does not observe VoiceOver or certify Web Content Accessibility Guidelines (WCAG) conformance.</p><h2>Warranty</h2><p>The software is provided without warranty. Review findings with your own accessibility testing process.</p>`}<h2>Questions</h2><p>Open an issue in the <a href="https://github.com/B-Divyesh/sf-silent-focus-sentinel">project repository <span class="sr-only">(external site)</span></a>.</p></article>`);
+  return shell(`<article class="prose"><span class="eyebrow">LAST UPDATED · AUGUST 29, 2026</span><h1>${privacy ? 'Your traces stay on your machine' : 'Use the tool as provided'}</h1>${privacy ? `<h2>CLI data</h2><p>The CLI reads the trace paths you provide. It writes reports only to chosen paths or a new demo directory.</p><h2>Website data</h2><p>This site stores no trace data, cookies, or browser data. It loads no third-party scripts, fonts, or analytics.</p><h2>Network access</h2><p>The CLI has no telemetry and makes no network requests. The site loads its files from this domain only.</p>` : `<h2>License</h2><p>Silent Focus Sentinel is free software under the MIT license.</p><h2>Purpose</h2><p>The tool checks ordered VoiceOver focus stops captured in an iOS Simulator. It does not record VoiceOver audio or certify Web Content Accessibility Guidelines (WCAG) conformance.</p><h2>Warranty</h2><p>The software is provided without warranty. Review findings with your own accessibility testing process.</p>`}<h2>Questions</h2><p>Open an issue in the <a href="https://github.com/B-Divyesh/sf-silent-focus-sentinel">project repository <span class="sr-only">(external site)</span></a>.</p></article>`);
 }
 
 function notFound() {
@@ -127,7 +127,7 @@ function bindActions() {
     }
   });
   document.querySelector<HTMLButtonElement>('[data-download]')?.addEventListener('click', () => {
-    const payload = { schemaVersion: 1, screen: 'Checkout', platform: 'iOS Simulator 18.2', events: sample.map(({ text, state, ...event }) => ({ ...event, text: state === 'empty' || state === 'ignored' ? '' : text, ignored: state === 'ignored' })) };
+    const payload = { schemaVersion: 1, screen: 'Checkout', platform: 'iOS Simulator 18.2 VoiceOver', events: sample.map(({ text, state, ...event }) => ({ ...event, announcement: state === 'empty' || state === 'ignored' ? '' : text, capture: 'voiceover_simulator', ignored: state === 'ignored' })) };
     const url = URL.createObjectURL(new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' }));
     const link = document.createElement('a');
     link.href = url;

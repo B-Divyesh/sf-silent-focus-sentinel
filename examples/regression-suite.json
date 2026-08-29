@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "description": "Versioned empty-text classifier cases for caller-selected XCTest elements",
+  "description": "Legacy label/value classifier unit cases. This fixture is not VoiceOver traversal accuracy evidence.",
   "cases": [
     {"id":"empty-button","category":"button","expectedEmpty":true,"event":{"id":"empty-button","role":"button","label":"","value":"","text":""}},
     {"id":"whitespace-button","category":"whitespace","expectedEmpty":true,"event":{"id":"whitespace-button","role":"button","label":"   ","value":"","text":"   "}},

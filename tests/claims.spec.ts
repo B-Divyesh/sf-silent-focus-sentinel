@@ -17,19 +17,19 @@ function analyzeSample() {
 function makeXcodebuild(directory: string) {
   const executable = join(directory, 'xcodebuild');
   writeFileSync(executable, `#!/bin/sh
-printf '%s\n' 'unmarked {"id":"ignore-me"}' 'SFS_EVENT:{"id":"checkout.title","role":"header","text":"Checkout"}' 'log SFS_EVENT:{"id":"checkout.pay","role":"button","text":"Pay now"}'
+printf '%s\n' 'unmarked {"id":"ignore-me"}' 'SFS_VOICEOVER_STOP:{"index":1,"id":"checkout.title","role":"header","announcement":"Checkout","capture":"voiceover_simulator"}' 'log SFS_VOICEOVER_STOP:{"index":2,"id":"checkout.surprise","role":"other","announcement":"","capture":"voiceover_simulator"}'
 `);
   chmodSync(executable, 0o755);
   return executable;
 }
 
-test('@claim:find-empty-text flags empty label/value text', () => {
+test('@claim:find-empty-text flags an empty effective focus announcement', () => {
   const report = analyzeSample();
   expect(report.summary.emptyCount).toBe(1);
   expect(report.findings.find((finding: { kind: string }) => finding.kind === 'empty_text').id).toBe('checkout.promo');
 });
 
-test('@claim:find-duplicate-text flags adjacent duplicate label/value text', () => {
+test('@claim:find-duplicate-text flags adjacent duplicate focus announcements', () => {
   const report = analyzeSample();
   expect(report.summary.duplicateCount).toBe(1);
   expect(report.findings.find((finding: { kind: string }) => finding.kind === 'duplicate_text').id).toBe('checkout.total-value');
@@ -49,7 +49,7 @@ test('@claim:json-html writes parseable standalone reports', () => {
   expect(JSON.parse(readFileSync(jsonPath, 'utf8')).summary.findingCount).toBe(2);
   const html = readFileSync(htmlPath, 'utf8');
   expect(html).toContain('<!doctype html>');
-  expect(html).toContain('This element has empty label/value text.');
+  expect(html).toContain('This VoiceOver focus stop has an empty announcement.');
   expect(html).not.toMatch(/<script|https?:\/\//);
 });
 
@@ -64,13 +64,14 @@ test('@claim:record-command captures ordered JSON Lines', () => {
   expect(trace.events.map((event: { text: string }) => event.text)).toEqual(['First', 'Second']);
 });
 
-test('@claim:xctest-extraction extracts only marked events from xcodebuild output', () => {
+test('@claim:xctest-extraction extracts ordered Simulator focus stops from xcodebuild output', () => {
   const directory = mkdtempSync(join(tmpdir(), 'sfs-xctest-'));
   const output = join(directory, 'trace.json');
   execFileSync(bin, ['record-xctest', '--scheme', 'CheckoutUITests', '--xcodebuild', makeXcodebuild(directory), '--output', output]);
   const trace = JSON.parse(readFileSync(output, 'utf8'));
-  expect(trace.events.map((event: { id: string }) => event.id)).toEqual(['checkout.title', 'checkout.pay']);
-  expect(trace.events.map((event: { text: string }) => event.text)).toEqual(['Checkout', 'Pay now']);
+  expect(trace.events.map((event: { id: string }) => event.id)).toEqual(['checkout.title', 'checkout.surprise']);
+  expect(trace.events.map((event: { announcement: string }) => event.announcement)).toEqual(['Checkout', '']);
+  expect(trace.events.map((event: { capture: string }) => event.capture)).toEqual(['voiceover_simulator', 'voiceover_simulator']);
 });
 
 test('@claim:diff-regressions reports new and resolved findings', () => {
@@ -132,13 +133,20 @@ test('@claim:single-binary builds with the declared Rust minimum', () => {
   expect(statSync(bin).mode & 0o111).not.toBe(0);
 });
 
-test('@claim:public-xctest-helper uses public XCTest label and value fields only', () => {
+test('@claim:public-xctest-helper uses public Simulator VoiceOver focus notifications', () => {
   const helper = readFileSync(join(root, 'examples/ios/SilentFocusSentinelXCTest.swift'), 'utf8');
+  const capture = readFileSync(join(root, 'examples/ios/SilentFocusSentinelVoiceOverCapture.swift'), 'utf8');
   expect(helper).toContain('import XCTest');
-  expect(helper).toContain('element.label');
-  expect(helper).toContain('element.value as? String');
-  expect(helper).toContain('let text: String');
-  expect(helper).not.toMatch(/AXUIElement|UIAccessibility|announcement:/);
+  expect(capture).toContain('import UIKit');
+  expect(capture).toContain('UIAccessibility.elementFocusedNotification');
+  expect(capture).toContain('UIAccessibility.focusedElementUserInfoKey');
+  expect(capture).toContain('SFS_VOICEOVER_STOP:');
+  expect(capture).toContain('announcement:');
+  expect(capture).not.toMatch(/AXUIElement|private.*accessibility/i);
+  expect(readFileSync(join(root, 'examples/ios/CheckoutFocusTraversalTests.swift'), 'utf8')).toContain('silent-focus-sentinel-capture');
+  const nativeTests = readFileSync(join(root, 'examples/ios/SilentFocusSentinelVoiceOverCaptureTests.swift'), 'utf8');
+  expect(nativeTests).toContain('testSilentFocusedStopStaysSilent');
+  expect(nativeTests).toContain('testHintAndValueArePartOfTheEffectiveAnnouncement');
 });
 
 test('@claim:stdout-json prints parseable reports when --json is omitted', () => {
@@ -173,24 +181,32 @@ test('@claim:demo-isolation leaves the project unchanged and uses a new temporar
   expect(await page.evaluate(() => localStorage.getItem('real:marker'))).toBe('keep');
 });
 
-test('@claim:accuracy-suite meets the measured detection and false-positive rates', () => {
-  const suite = JSON.parse(readFileSync(join(root, 'examples/regression-suite.json'), 'utf8')) as { cases: Array<{ id: string; expectedEmpty: boolean; event: object }> };
-  let truePositives = 0;
-  let falsePositives = 0;
-  const positives = suite.cases.filter((item) => item.expectedEmpty).length;
-  const negatives = suite.cases.length - positives;
-  for (const item of suite.cases) {
-    const directory = mkdtempSync(join(tmpdir(), 'sfs-accuracy-'));
-    const trace = join(directory, 'trace.json');
-    writeFileSync(trace, JSON.stringify({ schemaVersion: 1, screen: item.id, platform: 'fixture', events: [item.event] }));
-    const report = JSON.parse(execFileSync(bin, ['analyze', trace], { encoding: 'utf8' }));
-    const found = report.findings.some((finding: { kind: string }) => finding.kind === 'empty_text');
-    if (item.expectedEmpty && found) truePositives += 1;
-    if (!item.expectedEmpty && found) falsePositives += 1;
+test('@claim:accuracy-suite meets the VoiceOver traversal detection and false-positive rates', () => {
+  const suite = JSON.parse(readFileSync(join(root, 'examples/voiceover-observed-regression-suite.json'), 'utf8')) as {
+    capture: { voiceOver: boolean; source: string };
+    groundTruth: { silentIds: string[]; duplicateIds: string[] };
+    trace: { events: Array<{ id: string; outsideCallerSelectedList?: boolean }> };
+  };
+  const directory = mkdtempSync(join(tmpdir(), 'sfs-voiceover-accuracy-'));
+  const tracePath = join(directory, 'observed-traversal.json');
+  writeFileSync(tracePath, JSON.stringify(suite.trace));
+  const report = JSON.parse(execFileSync(bin, ['analyze', tracePath], { encoding: 'utf8' }));
+  const foundSilent = new Set(report.findings.filter((finding: { kind: string }) => finding.kind === 'empty_text').map((finding: { id: string }) => finding.id));
+  const foundDuplicates = new Set(report.findings.filter((finding: { kind: string }) => finding.kind === 'duplicate_text').map((finding: { id: string }) => finding.id));
+  const positives = new Set(suite.groundTruth.silentIds);
+  const negatives = suite.trace.events.filter((event) => !positives.has(event.id));
+  const truePositives = [...positives].filter((id) => foundSilent.has(id)).length;
+  const falsePositives = negatives.filter((event) => foundSilent.has(event.id)).length;
+  expect(suite.capture.voiceOver).toBe(true);
+  expect(suite.capture.source).toContain('elementFocusedNotification');
+  expect(suite.trace.events).toHaveLength(30);
+  expect(truePositives / positives.size).toBeGreaterThanOrEqual(0.9);
+  expect(falsePositives / negatives.length).toBeLessThan(0.1);
+  expect([...foundDuplicates]).toEqual(expect.arrayContaining(suite.groundTruth.duplicateIds));
+  for (const id of ['checkout.surprise', 'settings.orphan']) {
+    expect(suite.trace.events.find((event) => event.id === id)?.outsideCallerSelectedList).toBe(true);
+    expect(foundSilent).toContain(id);
   }
-  expect(suite.cases).toHaveLength(30);
-  expect(truePositives / positives).toBeGreaterThanOrEqual(0.9);
-  expect(falsePositives / negatives).toBeLessThan(0.1);
 });
 
 test('@claim:accountless-run exercises every command without credentials or a service', () => {
@@ -265,8 +281,8 @@ test('@claim:sample-download exports the isolated demo trace', async ({ page }) 
   const trace = JSON.parse(readFileSync(path!, 'utf8'));
   expect(trace.schemaVersion).toBe(1);
   expect(trace.events).toHaveLength(7);
-  expect(trace.events[2].text).toBe('');
-  expect(trace.events[2]).not.toHaveProperty('announcement');
+  expect(trace.events[2].announcement).toBe('');
+  expect(trace.events[2].capture).toBe('voiceover_simulator');
 });
 
 test('@claim:browser-demo-ready opens a finished report and reset restores its sample state', async ({ page }) => {
@@ -301,8 +317,8 @@ test('@claim:no-wcag-certification publishes a boundary, not a certification res
   await page.goto('/');
   await expect(page.getByText('It does not certify Web Content Accessibility Guidelines (WCAG) conformance.')).toBeVisible();
   await page.goto('/terms');
-  await expect(page.getByText(/does not observe VoiceOver or certify Web Content Accessibility Guidelines/)).toBeVisible();
-  expect(readFileSync(join(root, 'README.md'), 'utf8')).toContain('It does not certify Web Content Accessibility Guidelines (WCAG) conformance.');
+  await expect(page.getByText(/does not record VoiceOver audio or certify Web Content Accessibility Guidelines/)).toBeVisible();
+  expect(readFileSync(join(root, 'README.md'), 'utf8')).toContain('It does not record VoiceOver audio or certify Web Content Accessibility Guidelines (WCAG) conformance.');
 });
 
 test('@claim:cli-demo-recording regenerates the checked-in terminal recording from the current binary', () => {

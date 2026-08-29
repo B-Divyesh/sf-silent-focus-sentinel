@@ -3,12 +3,12 @@
   "screen": "Checkout",
   "platform": "iOS Simulator 18.2",
   "events": [
-    {"index": 1, "id": "checkout.title", "role": "header", "label": "Checkout", "text": "Checkout"},
-    {"index": 2, "id": "checkout.address", "role": "button", "label": "Delivery address", "value": "14 Oak Street", "text": "Delivery address, 14 Oak Street"},
-    {"index": 3, "id": "checkout.promo", "role": "button", "label": "", "text": ""},
-    {"index": 4, "id": "checkout.total-label", "role": "staticText", "label": "Total, $42.00", "text": "Total, $42.00"},
-    {"index": 5, "id": "checkout.total-value", "role": "staticText", "label": "Total, $42.00", "text": " Total,   $42.00 "},
-    {"index": 6, "id": "checkout.separator", "role": "image", "label": "", "text": "", "ignored": true},
-    {"index": 7, "id": "checkout.pay", "role": "button", "label": "Pay now", "hint": "Completes the order", "text": "Pay now"}
+    {"index": 1, "id": "checkout.title", "role": "header", "label": "Checkout", "announcement": "Checkout", "capture": "voiceover_simulator"},
+    {"index": 2, "id": "checkout.address", "role": "button", "label": "Delivery address", "value": "14 Oak Street", "announcement": "Delivery address, 14 Oak Street", "capture": "voiceover_simulator"},
+    {"index": 3, "id": "checkout.promo", "role": "button", "label": "", "announcement": "", "capture": "voiceover_simulator"},
+    {"index": 4, "id": "checkout.total-label", "role": "staticText", "label": "Total, $42.00", "announcement": "Total, $42.00", "capture": "voiceover_simulator"},
+    {"index": 5, "id": "checkout.total-value", "role": "staticText", "label": "Total, $42.00", "announcement": " Total,   $42.00 ", "capture": "voiceover_simulator"},
+    {"index": 6, "id": "checkout.separator", "role": "image", "label": "", "announcement": "", "capture": "voiceover_simulator", "ignored": true},
+    {"index": 7, "id": "checkout.pay", "role": "button", "label": "Pay now", "hint": "Completes the order", "announcement": "Pay now, Completes the order", "capture": "voiceover_simulator"}
   ]
 }

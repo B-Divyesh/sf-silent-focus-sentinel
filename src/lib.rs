@@ -38,10 +38,31 @@ pub struct FocusEvent {
     pub value: String,
     #[serde(default)]
     pub hint: String,
-    #[serde(default, alias = "announcement")]
+    #[serde(default)]
     pub text: String,
+    /// The announcement observed by the Simulator capture.  `text` remains
+    /// accepted for traces made by older scripted runners.
+    #[serde(default)]
+    pub announcement: String,
+    /// Identifies how the stop was captured. New simulator traces use
+    /// `voiceover_simulator`; older hand-authored traces leave this empty.
+    #[serde(default)]
+    pub capture: String,
     #[serde(default)]
     pub ignored: bool,
+}
+
+impl FocusEvent {
+    /// Prefer the announcement captured from the assistive-technology focus
+    /// stream.  Keeping the legacy text fallback makes existing JSONL runners
+    /// and reports compatible with the original 1.0 file format.
+    pub fn effective_announcement(&self) -> &str {
+        if !self.announcement.trim().is_empty() || self.capture == "voiceover_simulator" {
+            &self.announcement
+        } else {
+            &self.text
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
@@ -180,7 +201,8 @@ pub fn analyze(trace: &Trace) -> Report {
         if event.ignored {
             continue;
         }
-        let text = normalized(&event.text);
+        let effective = event.effective_announcement();
+        let text = normalized(effective);
         if text.is_empty() {
             findings.push(Finding {
                 kind: FindingKind::EmptyText,
@@ -188,20 +210,20 @@ pub fn analyze(trace: &Trace) -> Report {
                 index: event.index,
                 id: event.id.clone(),
                 role: event.role.clone(),
-                text: event.text.clone(),
-                message: "This element has empty label/value text.".into(),
+                text: effective.to_owned(),
+                message: "This VoiceOver focus stop has an empty announcement.".into(),
             });
-        } else if previous.is_some_and(|prior| normalized(&prior.text) == text) {
+        } else if previous.is_some_and(|prior| normalized(prior.effective_announcement()) == text) {
             findings.push(Finding {
                 kind: FindingKind::DuplicateText,
                 severity: Severity::Warning,
                 index: event.index,
                 id: event.id.clone(),
                 role: event.role.clone(),
-                text: event.text.clone(),
+                text: effective.to_owned(),
                 message: format!(
-                    "This duplicates the previous element's label/value text: {:?}.",
-                    event.text.trim()
+                    "This duplicates the previous focus stop's announcement: {:?}.",
+                    effective.trim()
                 ),
             });
         }
@@ -272,7 +294,7 @@ impl HtmlReport for Report {
     }
     fn summary_html(&self) -> String {
         format!(
-            "<p><strong>{}</strong> findings across {} scripted elements: {} empty and {} duplicate.</p>",
+            "<p><strong>{}</strong> findings across {} focus stops: {} silent and {} repeated.</p>",
             self.summary.finding_count,
             self.summary.analyzed_count,
             self.summary.empty_count,
@@ -357,5 +379,16 @@ mod tests {
         let html = render_html(&analyze(&trace));
         assert!(html.contains("&lt;bad&gt;"));
         assert!(!html.contains("<bad>"));
+    }
+
+    #[test]
+    fn uses_simulator_announcement_over_legacy_snapshot_text() {
+        let trace = parse_trace(
+            r#"{"events":[{"id":"extra-stop","role":"button","text":"Old label snapshot","announcement":"","capture":"voiceover_simulator"}]}"#,
+        )
+        .unwrap();
+        let report = analyze(&trace);
+        assert_eq!(report.summary.empty_count, 1);
+        assert_eq!(report.findings[0].id, "extra-stop");
     }
 }
