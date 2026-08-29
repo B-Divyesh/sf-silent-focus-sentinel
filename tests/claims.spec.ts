@@ -193,8 +193,9 @@ test('@claim:public-xctest-helper uses public Simulator VoiceOver focus notifica
   expect(example).toContain('UISwipeGestureRecognizer');
   expect(example).toContain('UIAccessibility.post(notification: .layoutChanged, argument: stop)');
   expect(example).toContain('override func accessibilityElementDidBecomeFocused()');
+  expect(example).toContain('traversalStops.first(where: { $0.accessibilityElementIsFocused() })');
   const traversalLoop = example.slice(example.indexOf('private func advanceVoiceOverFocus()'), example.indexOf('func markTraceEmitted'));
-  expect(traversalLoop).not.toContain('observeVoiceOverFocus');
+  expect(traversalLoop).not.toContain('observeVoiceOverFocus?(stop)');
   expect(example).toContain('private let payloadStop = UILabel()');
   expect(example).toContain('payloadStop.accessibilityLabel = payload');
   expect(example).not.toContain('payloadStop.accessibilityValue = payload');

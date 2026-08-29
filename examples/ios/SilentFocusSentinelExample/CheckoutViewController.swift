@@ -138,9 +138,18 @@ final class CheckoutViewController: UIViewController {
         let stop = traversalStops[traversalIndex]
         traversalIndex += 1
         UIAccessibility.post(notification: .layoutChanged, argument: stop)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { [weak self] in
+            self?.captureCurrentVoiceOverFocus()
+        }
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.9) { [weak self] in
             self?.advanceVoiceOverFocus()
         }
+    }
+
+    private func captureCurrentVoiceOverFocus() {
+        guard UIAccessibility.isVoiceOverRunning else { return }
+        guard let focusedStop = traversalStops.first(where: { $0.accessibilityElementIsFocused() }) else { return }
+        observeVoiceOverFocus?(focusedStop)
     }
 
     func markTraceEmitted(_ payload: String) {
