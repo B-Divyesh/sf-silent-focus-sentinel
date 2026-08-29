@@ -176,11 +176,14 @@ test('@claim:public-xctest-helper uses public Simulator VoiceOver focus notifica
   expect(capture).not.toMatch(/AXUIElement|private.*accessibility/i);
   const traversal = readFileSync(join(root, 'examples/ios/CheckoutFocusTraversalTests.swift'), 'utf8');
   const appDelegate = readFileSync(join(root, 'examples/ios/SilentFocusSentinelExample/AppDelegate.swift'), 'utf8');
+  const example = readFileSync(join(root, 'examples/ios/SilentFocusSentinelExample/CheckoutViewController.swift'), 'utf8');
   expect(traversal).toContain('silent-focus-sentinel-capture');
   expect(traversal).toContain('app.swipeRight()');
   expect(traversal).toContain('Trace emitted');
   expect(appDelegate).toContain('private let capture = SilentFocusSentinelVoiceOverCapture()');
   expect(appDelegate).toContain('capture.start(emitAfterFocusing: "checkout.capture-end")');
+  expect(example).toContain('UISwipeGestureRecognizer');
+  expect(example).toContain('UIAccessibility.post(notification: .layoutChanged, argument: stop)');
   expect(existsSync(join(root, 'examples/ios/SilentFocusSentinelExample.xcodeproj/project.pbxproj'))).toBe(true);
   expect(existsSync(join(root, 'examples/ios/SilentFocusSentinelExample.xcodeproj/xcshareddata/xcschemes/SilentFocusSentinelExample.xcscheme'))).toBe(true);
   const nativeTests = readFileSync(join(root, 'examples/ios/SilentFocusSentinelVoiceOverCaptureTests.swift'), 'utf8');

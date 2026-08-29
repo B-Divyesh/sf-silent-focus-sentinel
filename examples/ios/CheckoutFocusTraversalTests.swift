@@ -9,11 +9,11 @@ final class CheckoutFocusTraversalTests: XCTestCase {
 
         XCTAssertTrue(app.buttons["checkout.pay"].waitForExistence(timeout: 5))
 
-        // With VoiceOver enabled, a one-finger swipe right advances its real
-        // cursor. The app observer, not this test's element queries, records
-        // every focused stop. Repeat past the intentionally unnamed stop until
-        // the final marker tells the app process to emit its JSON Lines.
-        for _ in 0..<8 {
+        // XCUITest sends synthetic one-finger swipes. The example's test-only
+        // bridge converts each swipe into a public UIAccessibility focus move,
+        // so VoiceOver's real cursor enters every stop. The app observer, not
+        // this test's element queries, records the traversal.
+        for _ in 0..<7 {
             app.swipeRight()
         }
 

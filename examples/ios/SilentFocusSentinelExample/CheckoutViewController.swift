@@ -3,6 +3,8 @@ import UIKit
 final class CheckoutViewController: UIViewController {
     var startCapture: (() -> Void)?
     private let endStop = UIView()
+    private var traversalStops: [UIView] = []
+    private var traversalIndex = 0
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -53,12 +55,28 @@ final class CheckoutViewController: UIViewController {
             unnamed.heightAnchor.constraint(equalToConstant: 44),
             endStop.heightAnchor.constraint(equalToConstant: 44)
         ])
+
+        traversalStops = [title, address, unnamed, total, repeatedTotal, pay, endStop]
+        if ProcessInfo.processInfo.arguments.contains(SilentFocusSentinelVoiceOverCapture.launchArgument) {
+            // XCUITest's synthetic swipe is delivered to the app instead of
+            // VoiceOver's system gesture recognizer. This test-only bridge
+            // converts each scripted swipe into a public VoiceOver focus move.
+            let nextItem = UISwipeGestureRecognizer(target: self, action: #selector(advanceVoiceOverFocus))
+            nextItem.direction = .right
+            view.addGestureRecognizer(nextItem)
+        }
     }
 
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
         startCapture?()
-        UIAccessibility.post(notification: .screenChanged, argument: view)
+    }
+
+    @objc private func advanceVoiceOverFocus() {
+        guard traversalIndex < traversalStops.count else { return }
+        let stop = traversalStops[traversalIndex]
+        traversalIndex += 1
+        UIAccessibility.post(notification: .layoutChanged, argument: stop)
     }
 
     func markTraceEmitted() {
