@@ -9,14 +9,12 @@ final class CheckoutFocusTraversalTests: XCTestCase {
         SilentFocusSentinel.record(
             app.staticTexts["checkout.title"],
             id: "checkout.title",
-            role: "header",
-            announcement: "Checkout, heading"
+            role: "header"
         )
         SilentFocusSentinel.record(
             app.buttons["checkout.promo"],
             id: "checkout.promo",
-            role: "button",
-            announcement: ""
+            role: "button"
         )
         SilentFocusSentinel.record(
             app.images["checkout.separator"],
@@ -27,8 +25,7 @@ final class CheckoutFocusTraversalTests: XCTestCase {
         SilentFocusSentinel.record(
             app.buttons["checkout.pay"],
             id: "checkout.pay",
-            role: "button",
-            announcement: "Pay now, button"
+            role: "button"
         )
     }
 }

@@ -15,7 +15,7 @@ All normal text combinations target at least 4.5:1 contrast. Focus uses a 3 px a
 
 ## Type and spacing
 
-- Display: self-hosted **Space Grotesk**, 600, for compact technical headings. The Latin WOFF2 comes from Fontsource under the SIL Open Font License; its license ships beside the font and Vite emits it as a content-hashed immutable asset.
+- Display: self-hosted **Space Grotesk**, 600, for compact technical headings. The Latin WOFF2 comes from Fontsource under the SIL Open Font License; its license ships beside the font and Vite emits it as a content-hashed immutable asset. It uses `font-display: optional`: a cold page retains its system fallback rather than shifting when the display face arrives.
 - Body and data: system UI; `ui-monospace` for commands and trace values.
 - Scale: 14, 16, 20, 28, 44, and 64 px. Body never drops below 16 px.
 - Spacing follows 4/8 px increments. Sections use 80–128 px vertical gaps; controls are at least 44 px tall.

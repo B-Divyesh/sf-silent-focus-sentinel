@@ -4,7 +4,7 @@ use silent_focus_sentinel::{
     analyze, diff, parse_trace, read_trace, render_html, DiffReport, Report, Trace,
 };
 use std::fs;
-use std::path::{Path, PathBuf};
+use std::path::{Component, Path, PathBuf};
 use std::process::{Command, ExitCode};
 use std::time::{SystemTime, UNIX_EPOCH};
 
@@ -108,6 +108,91 @@ fn write_outputs<T: Serialize + silent_focus_sentinel::HtmlReport>(
     Ok(())
 }
 
+/// Return the filesystem identity a path will have without creating anything.
+/// Existing path components are canonicalized, so an output reached through a
+/// symlink cannot quietly replace an input reached through its real path.
+fn path_identity(path: &Path) -> Result<PathBuf, String> {
+    let absolute = if path.is_absolute() {
+        path.to_path_buf()
+    } else {
+        std::env::current_dir()
+            .map_err(|error| format!("could not resolve the working directory: {error}"))?
+            .join(path)
+    };
+    let mut lexical = PathBuf::new();
+    for component in absolute.components() {
+        match component {
+            Component::Prefix(prefix) => lexical.push(prefix.as_os_str()),
+            Component::RootDir => lexical.push(component.as_os_str()),
+            Component::CurDir => {}
+            Component::ParentDir => {
+                lexical.pop();
+            }
+            Component::Normal(name) => lexical.push(name),
+        }
+    }
+
+    let mut missing = Vec::new();
+    let mut existing = lexical.as_path();
+    while !existing.exists() {
+        let name = existing.file_name().ok_or_else(|| {
+            format!(
+                "could not resolve a filesystem identity for {}",
+                path.display()
+            )
+        })?;
+        missing.push(name.to_os_string());
+        existing = existing.parent().ok_or_else(|| {
+            format!(
+                "could not resolve a filesystem identity for {}",
+                path.display()
+            )
+        })?;
+    }
+    let mut resolved = fs::canonicalize(existing)
+        .map_err(|error| format!("could not resolve {}: {error}", existing.display()))?;
+    for name in missing.iter().rev() {
+        resolved.push(name);
+    }
+    Ok(resolved)
+}
+
+/// Refuse every destructive or ambiguous report destination before a writer is
+/// opened. This must run before trace parsing too: a malformed input is never a
+/// reason to permit an output that aliases it.
+fn validate_report_paths(
+    inputs: &[&Path],
+    json: Option<&Path>,
+    html: Option<&Path>,
+) -> Result<(), String> {
+    let input_paths = inputs
+        .iter()
+        .map(|path| path_identity(path))
+        .collect::<Result<Vec<_>, _>>()?;
+    let outputs = [("--json", json), ("--html", html)];
+    let output_paths = outputs
+        .iter()
+        .filter_map(|(flag, path)| path.map(|path| (*flag, path)))
+        .map(|(flag, path)| Ok((flag, path, path_identity(path)?)))
+        .collect::<Result<Vec<_>, String>>()?;
+
+    for (flag, path, identity) in &output_paths {
+        if input_paths.iter().any(|input| input == identity) {
+            return Err(format!(
+                "{flag} path {} matches an input trace; choose a different report path",
+                path.display()
+            ));
+        }
+    }
+    if output_paths.len() == 2 && output_paths[0].2 == output_paths[1].2 {
+        return Err(format!(
+            "{} and {} use the same path; JSON and HTML reports need different files",
+            output_paths[0].0, output_paths[1].0
+        ));
+    }
+    Ok(())
+}
+
 fn ensure_parent(path: &Path) -> Result<(), String> {
     if let Some(parent) = path.parent().filter(|p| !p.as_os_str().is_empty()) {
         fs::create_dir_all(parent)
@@ -191,6 +276,7 @@ fn run(cli: Cli) -> Result<u8, String> {
             html,
             fail_on,
         } => {
+            validate_report_paths(&[&input], json.as_deref(), html.as_deref())?;
             let report: Report = analyze(&read_trace(&input)?);
             let failed = matches!(fail_on, AnalyzeFailure::Findings) && !report.findings.is_empty();
             write_outputs(&report, json.as_deref(), html.as_deref())?;
@@ -256,6 +342,7 @@ fn run(cli: Cli) -> Result<u8, String> {
             html,
             fail_on,
         } => {
+            validate_report_paths(&[&baseline, &current], json.as_deref(), html.as_deref())?;
             let report: DiffReport = diff(&read_trace(&baseline)?, &read_trace(&current)?);
             let failed =
                 matches!(fail_on, DiffFailure::Regressions) && !report.new_findings.is_empty();
@@ -301,7 +388,9 @@ fn main() -> ExitCode {
 
 #[cfg(test)]
 mod tests {
-    use super::parse_xctest_events;
+    use super::{parse_xctest_events, validate_report_paths};
+    use std::fs;
+    use tempfile::tempdir;
 
     #[test]
     fn extracts_marked_xctest_events_from_build_output() {
@@ -317,5 +406,20 @@ mod tests {
     fn explains_when_xctest_helper_emits_nothing() {
         let error = parse_xctest_events("Test Suite finished").unwrap_err();
         assert!(error.contains("SFS_EVENT"));
+    }
+
+    #[test]
+    fn rejects_every_report_path_collision_before_a_write() {
+        let directory = tempdir().unwrap();
+        let input = directory.path().join("trace.json");
+        let other = directory.path().join("other.json");
+        fs::write(&input, "original trace").unwrap();
+        fs::write(&other, "other trace").unwrap();
+
+        assert!(validate_report_paths(&[&input], Some(&input), None).is_err());
+        assert!(validate_report_paths(&[&input], Some(&other), Some(&other)).is_err());
+        assert!(validate_report_paths(&[&input, &other], Some(&other), None).is_err());
+        assert_eq!(fs::read_to_string(&input).unwrap(), "original trace");
+        assert_eq!(fs::read_to_string(&other).unwrap(), "other trace");
     }
 }

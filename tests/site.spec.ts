@@ -37,6 +37,21 @@ test('390px layout keeps content within the viewport', async ({ page }) => {
   await expect(page.getByRole('link', { name: 'Try it with sample data' })).toBeVisible();
 });
 
+test('hero artwork never creates horizontal scrolling from tablet through desktop', async ({ page }) => {
+  for (const width of [761, 800, 1024, 1280, 1440]) {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto('/');
+    const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+    expect(overflow, `${width}px viewport overflow`).toBeLessThanOrEqual(1);
+  }
+});
+
+test('display face cannot swap into the hero after first paint', async ({ page }) => {
+  await page.goto('/');
+  expect(await page.locator('.hero h1').evaluate((element) => getComputedStyle(element).fontFamily)).toContain('Space Grotesk');
+  expect(readFileSync('site/src/style.css', 'utf8')).toContain('font-display:optional');
+});
+
 test('all visible controls meet the 44px mobile target and demo focus contrasts with its bar', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   for (const route of ['/', '/demo', '/privacy', '/terms']) {

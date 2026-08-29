@@ -15,25 +15,31 @@ private struct SilentFocusEvent: Encodable {
 /// Emits a machine-readable record for each stop in an app-owned XCTest traversal.
 ///
 /// XCTest cannot drive the private VoiceOver cursor. Keep traversal order explicit in
-/// the UI test, then record the accessibility label, value, and expected announcement
-/// for each stop. `silent-focus-sentinel record-xctest` extracts these lines from
+/// the UI test, then record the element's current accessibility label and value for
+/// each stop. `silent-focus-sentinel record-xctest` extracts these lines from
 /// `xcodebuild test` output and writes a regular trace file.
 enum SilentFocusSentinel {
     private static let marker = "SFS_EVENT:"
+
+    // This deliberately excludes the caller-supplied role. A button whose live
+    // label and value regress to empty must remain empty in the trace so the CLI
+    // can flag it. The role is diagnostic metadata, not observed speech.
+    static func observedAnnouncement(label: String, value: String) -> String {
+        [label, value]
+            .filter { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+            .joined(separator: ", ")
+    }
 
     static func record(
         _ element: XCUIElement,
         id: String,
         role: String,
-        announcement: String? = nil,
         hint: String = "",
         ignored: Bool = false
     ) {
         let label = element.label
         let value = element.value as? String ?? ""
-        let spoken = announcement ?? [label, value, role]
-            .filter { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
-            .joined(separator: ", ")
+        let spoken = observedAnnouncement(label: label, value: value)
         let event = SilentFocusEvent(
             id: id,
             role: role,

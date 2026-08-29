@@ -65,6 +65,15 @@ test('@claim:diff-regressions reports new and resolved findings', () => {
 });
 
 test('@claim:xctest-capture runs a marked XCTest simulator traversal through the CLI', () => {
+  const helper = readFileSync('examples/ios/SilentFocusSentinelXCTest.swift', 'utf8');
+  const helperRegression = readFileSync('examples/ios/SilentFocusSentinelXCTestTests.swift', 'utf8');
+  const traversal = readFileSync('examples/ios/CheckoutFocusTraversalTests.swift', 'utf8');
+  expect(helper).toContain('static func observedAnnouncement(label: String, value: String)');
+  expect(helper).not.toContain('announcement: String?');
+  expect(helper).not.toContain('[label, value, role]');
+  expect(traversal).not.toContain('announcement:');
+  expect(helperRegression).toContain('observedAnnouncement(label: "", value: "")');
+  expect(helperRegression).toContain('XCTAssertEqual(after, "")');
   const dir = mkdtempSync(join(tmpdir(), 'sfs-xctest-'));
   const xcodebuild = join(dir, 'xcodebuild');
   const output = join(dir, 'trace.json');
@@ -76,6 +85,62 @@ printf '%s\\n' 'Test Suite started' 'SFS_EVENT:{"id":"checkout.title","role":"he
   const trace = JSON.parse(readFileSync(output, 'utf8'));
   expect(trace.platform).toContain('iOS Simulator');
   expect(trace.events.map((event: { id: string }) => event.id)).toEqual(['checkout.title', 'checkout.pay']);
+});
+
+test('@claim:safe-output-paths rejects every input and report destination collision before writing', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'sfs-collision-'));
+  const baseline = join(dir, 'baseline.json');
+  const current = join(dir, 'current.json');
+  writeFileSync(baseline, readFileSync('examples/baseline-trace.json'));
+  writeFileSync(current, readFileSync('examples/sample-trace.json'));
+  const baselineBefore = readFileSync(baseline, 'utf8');
+  const currentBefore = readFileSync(current, 'utf8');
+  const cases = [
+    ['analyze', current, '--json', current],
+    ['analyze', current, '--html', current],
+    ['analyze', current, '--json', join(dir, 'report.out'), '--html', join(dir, 'report.out')],
+    ['diff', baseline, current, '--json', baseline],
+    ['diff', baseline, current, '--html', current],
+    ['diff', baseline, current, '--json', join(dir, 'diff.out'), '--html', join(dir, 'diff.out')],
+  ];
+  for (const args of cases) {
+    const result = spawnSync(bin, args, { encoding: 'utf8' });
+    expect(result.status, args.join(' ')).toBe(2);
+    expect(result.stderr).toContain('different');
+    expect(readFileSync(baseline, 'utf8')).toBe(baselineBefore);
+    expect(readFileSync(current, 'utf8')).toBe(currentBefore);
+  }
+});
+
+test('@claim:exit-codes follows the documented 0, 1, and 2 contract', () => {
+  expect(spawnSync(bin, ['analyze', 'examples/baseline-trace.json'], { encoding: 'utf8' }).status).toBe(0);
+  expect(spawnSync(bin, ['analyze', 'examples/sample-trace.json', '--fail-on', 'findings'], { encoding: 'utf8' }).status).toBe(1);
+  const malformed = join(mkdtempSync(join(tmpdir(), 'sfs-exit-')), 'invalid.json');
+  writeFileSync(malformed, '{');
+  expect(spawnSync(bin, ['analyze', malformed], { encoding: 'utf8' }).status).toBe(2);
+});
+
+test('@claim:failed-runner exits safely without creating an output trace', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'sfs-runner-'));
+  const output = join(dir, 'trace.json');
+  const result = spawnSync(bin, ['record', '--command', 'exit 9', '--output', output], { encoding: 'utf8' });
+  expect(result.status).toBe(2);
+  expect(result.stderr).toContain('record command exited');
+  expect(() => readFileSync(output, 'utf8')).toThrow();
+});
+
+test('@claim:single-binary builds with the declared Rust minimum', () => {
+  const cargo = readFileSync('Cargo.toml', 'utf8');
+  expect(cargo).toContain('rust-version = "1.85"');
+  expect(cargo).toContain('[[bin]]');
+  expect(cargo.match(/^\[\[bin\]\]/gm)).toHaveLength(1);
+  expect(readFileSync(bin)).toBeTruthy();
+});
+
+test('@claim:public-xctest-helper avoids private VoiceOver APIs', () => {
+  const helper = readFileSync('examples/ios/SilentFocusSentinelXCTest.swift', 'utf8');
+  expect(helper).toContain('import XCTest');
+  expect(helper).not.toMatch(/AXUIElement|UIAccessibility/);
 });
 
 test('@claim:local-only demo and CLI use no outside requests or storage', async ({ page, context }) => {

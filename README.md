@@ -41,7 +41,7 @@ silent-focus-sentinel record-xctest \
   --output artifacts/checkout-trace.json
 ```
 
-`record-xctest` runs `xcodebuild test`, extracts the helper's marked events, and saves a regular trace. XCTest does not expose the private VoiceOver cursor, so the test defines the intended swipe order explicitly and records the labels, values, and expected spoken text at each stop.
+`record-xctest` runs `xcodebuild test`, extracts the helper's marked events, and saves a regular trace. XCTest does not expose the private VoiceOver cursor, so the test defines the intended swipe order explicitly and records the current labels and values at each stop.
 
 ## Record another scripted traversal
 
@@ -67,6 +67,8 @@ silent-focus-sentinel analyze artifacts/checkout-trace.json \
 
 `record` accepts a command that emits JSON Lines. A non-zero runner exit is passed through as an error.
 
+The XCTest helper derives each announcement from the element's current accessibility label and value. Do not pass a prewritten announcement: an element that regresses to an empty label and value is written as an empty announcement and is flagged by `analyze`.
+
 ## Compare a baseline
 
 ```sh
@@ -77,6 +79,8 @@ silent-focus-sentinel diff examples/baseline-trace.json examples/sample-trace.js
 ```
 
 The report marks new findings and resolved findings. `--json` also prints the report to standard output when no file is given, so CI can parse it.
+
+For safety, every report path must differ from every input trace, and `--json` and `--html` must name different files. The CLI rejects a collision before writing anything.
 
 ## Event format
 
