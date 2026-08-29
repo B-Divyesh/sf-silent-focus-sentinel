@@ -69,7 +69,7 @@ final class SilentFocusSentinelVoiceOverCapture {
         for stop in stops {
             guard let data = try? encoder.encode(stop), let line = String(data: data, encoding: .utf8) else { continue }
             lines.append(line)
-            NSLog("%@", "SFS_APP_TRACE:" + line)
+            NSLog("%@", "SFS_VOICEOVER_STOP:" + line)
         }
         let completion = onEmission
         stop()

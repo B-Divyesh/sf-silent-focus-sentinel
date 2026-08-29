@@ -101,7 +101,10 @@ final class CheckoutViewController: UIViewController {
     }
 
     func markTraceEmitted(_ payload: String) {
-        endStop.accessibilityValue = payload
+        // The UI-test runner shares the Simulator pasteboard. Keeping the
+        // payload off the focused element prevents VoiceOver from speaking the
+        // JSON while the test is trying to finish.
+        UIPasteboard.general.string = payload
         endStop.accessibilityLabel = "Trace emitted"
     }
 }
