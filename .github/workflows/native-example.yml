@@ -41,6 +41,10 @@ jobs:
           xcrun simctl boot "${{ steps.simulator.outputs.device_id }}"
           xcrun simctl bootstatus "${{ steps.simulator.outputs.device_id }}" -b
           test "$(xcrun simctl spawn "${{ steps.simulator.outputs.device_id }}" defaults read com.apple.Accessibility VoiceOverTouchEnabled)" = 1
+          # The preference survives reboot, but the running accessibility
+          # service only observes it after this documented Darwin notification.
+          xcrun simctl spawn "${{ steps.simulator.outputs.device_id }}" notifyutil -p com.apple.accessibility.voiceover.status.changed
+          sleep 2
       - name: Build CLI and record the real traversal
         shell: bash
         run: |

@@ -193,6 +193,8 @@ test('@claim:public-xctest-helper uses public Simulator VoiceOver focus notifica
   expect(example).toContain('private let payloadStop = UILabel()');
   expect(example).toContain('payloadStop.accessibilityLabel = payload');
   expect(example).not.toContain('payloadStop.accessibilityValue = payload');
+  const nativeWorkflow = readFileSync(join(root, '.github/workflows/native-example.yml'), 'utf8');
+  expect(nativeWorkflow).toContain('com.apple.accessibility.voiceover.status.changed');
   expect(existsSync(join(root, 'examples/ios/SilentFocusSentinelExample.xcodeproj/project.pbxproj'))).toBe(true);
   expect(existsSync(join(root, 'examples/ios/SilentFocusSentinelExample.xcodeproj/xcshareddata/xcschemes/SilentFocusSentinelExample.xcscheme'))).toBe(true);
   const nativeTests = readFileSync(join(root, 'examples/ios/SilentFocusSentinelVoiceOverCaptureTests.swift'), 'utf8');
