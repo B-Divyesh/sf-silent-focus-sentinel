@@ -81,9 +81,14 @@ Local production Lighthouse mobile runs (Chromium, cold load) were:
 ## Deployment
 
 Artifact class remains a Rust CLI plus static Vite documentation/demo site.
-Deployment is static and is triggered from `main`; the source commit for this
-repair is recorded in git history. After deployment, verify live root asset
-hashes against `dist/site/` and repeat the browser smoke checks.
+The static deployment trigger available in this checkout is a push to `main`;
+`c54e9920685cffc5dac0bf3f87593e6b16502532` was pushed to `origin/main`.
+At final worker check the public endpoint still returned the prior root HTML
+SHA-256 (`0f064546af8906c23b7f82e69e757676303ebd257e628fd636142464e9ddfc5c`),
+and this repository has no workflow or deployment command to invoke directly.
+The deployment service must finish propagating that pushed static revision;
+then compare live root assets to `dist/site/` and repeat the browser smoke
+checks.
 
 ## Known limits
 
