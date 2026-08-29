@@ -21,5 +21,12 @@ final class CheckoutFocusTraversalTests: XCTestCase {
         let emitted = NSPredicate(format: "label == %@", "Trace emitted")
         expectation(for: emitted, evaluatedWith: end)
         waitForExpectations(timeout: 10)
+
+        guard let payload = end.value as? String, !payload.isEmpty else {
+            return XCTFail("The app did not expose its observed VoiceOver trace")
+        }
+        for line in payload.split(separator: "\n") {
+            print("SFS_VOICEOVER_STOP:\(line)")
+        }
     }
 }

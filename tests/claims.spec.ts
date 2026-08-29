@@ -167,20 +167,22 @@ test('@claim:single-binary builds with the declared Rust minimum', () => {
 test('@claim:public-xctest-helper uses public Simulator VoiceOver focus notifications', () => {
   const helper = readFileSync(join(root, 'examples/ios/SilentFocusSentinelXCTest.swift'), 'utf8');
   const capture = readFileSync(join(root, 'examples/ios/SilentFocusSentinelVoiceOverCapture.swift'), 'utf8');
+  const traversal = readFileSync(join(root, 'examples/ios/CheckoutFocusTraversalTests.swift'), 'utf8');
   expect(helper).toContain('import XCTest');
   expect(capture).toContain('import UIKit');
   expect(capture).toContain('UIAccessibility.elementFocusedNotification');
   expect(capture).toContain('UIAccessibility.focusedElementUserInfoKey');
-  expect(capture).toContain('SFS_VOICEOVER_STOP:');
+  expect(traversal).toContain('SFS_VOICEOVER_STOP:');
   expect(capture).toContain('announcement:');
   expect(capture).not.toMatch(/AXUIElement|private.*accessibility/i);
-  const traversal = readFileSync(join(root, 'examples/ios/CheckoutFocusTraversalTests.swift'), 'utf8');
   const appDelegate = readFileSync(join(root, 'examples/ios/SilentFocusSentinelExample/AppDelegate.swift'), 'utf8');
   const example = readFileSync(join(root, 'examples/ios/SilentFocusSentinelExample/CheckoutViewController.swift'), 'utf8');
   expect(traversal).toContain('silent-focus-sentinel-capture');
   expect(traversal).toContain('app.swipeRight()');
   expect(traversal).toContain('app.buttons["capture.run"].tap()');
   expect(traversal).toContain('Trace emitted');
+  expect(traversal).toContain('VoiceOver enabled');
+  expect(capture).not.toContain('captureScriptedFocusStop');
   expect(appDelegate).toContain('private let capture = SilentFocusSentinelVoiceOverCapture()');
   expect(appDelegate).toContain('capture.start(emitAfterFocusing: "checkout.capture-end")');
   expect(example).toContain('UISwipeGestureRecognizer');

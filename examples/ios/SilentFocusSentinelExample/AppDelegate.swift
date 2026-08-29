@@ -12,8 +12,8 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
         let checkout = CheckoutViewController()
         checkout.startCapture = { [weak self, weak checkout] in
             guard ProcessInfo.processInfo.arguments.contains(SilentFocusSentinelVoiceOverCapture.launchArgument) else { return }
-            self?.capture.start(emitAfterFocusing: "checkout.capture-end") {
-                checkout?.markTraceEmitted()
+            self?.capture.start(emitAfterFocusing: "checkout.capture-end") { payload in
+                checkout?.markTraceEmitted(payload)
             }
             // Headless XCTest does not always deliver its synthetic swipe to
             // the app. Start the same public focus sequence after launch so
@@ -21,9 +21,6 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
             DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
                 checkout?.startVoiceOverTraversal()
             }
-        }
-        checkout.captureScriptedFocus = { [weak self] element in
-            self?.capture.captureScriptedFocusStop(element)
         }
         let window = UIWindow(frame: UIScreen.main.bounds)
         window.rootViewController = checkout

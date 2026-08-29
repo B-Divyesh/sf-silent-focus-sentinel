@@ -27,16 +27,15 @@ private struct SilentFocusVoiceOverStop: Encodable {
 /// described as a speech recording or transcript.
 final class SilentFocusSentinelVoiceOverCapture {
     static let launchArgument = "--silent-focus-sentinel-capture"
-    private static let marker = "SFS_VOICEOVER_STOP:"
 
     private var observer: NSObjectProtocol?
     private var stops: [SilentFocusVoiceOverStop] = []
     private var lastObject: ObjectIdentifier?
     private var endElementID: String?
-    private var onEmission: (() -> Void)?
+    private var onEmission: ((String) -> Void)?
     private var emitted = false
 
-    func start(emitAfterFocusing endElementID: String? = nil, onEmission: (() -> Void)? = nil) {
+    func start(emitAfterFocusing endElementID: String? = nil, onEmission: ((String) -> Void)? = nil) {
         stop()
         stops.removeAll()
         emitted = false
@@ -59,28 +58,22 @@ final class SilentFocusSentinelVoiceOverCapture {
         lastObject = nil
     }
 
-    /// Records the element targeted by a public accessibility focus move in
-    /// the bundled deterministic example. Production integrations should rely
-    /// on the focus notification observer above.
-    func captureScriptedFocusStop(_ element: NSObject) {
-        appendFocusedElement(element)
-    }
-
-    /// Prints JSON Lines that `record-xctest` extracts from xcodebuild output.
-    /// Keep this call in the app after the UI test has completed its traversal.
+    /// Serializes the app-observed trace and hands it to the UI test through a
+    /// visible accessibility value. The UI test relays these exact JSON Lines
+    /// to stdout for `record-xctest`; it does not create or infer any stops.
     func emitCapturedTrace() {
         guard !emitted else { return }
         emitted = true
         let encoder = JSONEncoder()
+        var lines: [String] = []
         for stop in stops {
             guard let data = try? encoder.encode(stop), let line = String(data: data, encoding: .utf8) else { continue }
-            // NSLog is collected with the Simulator test log by xcodebuild;
-            // `record-xctest` searches for the marker after any log prefix.
-            NSLog("%@", Self.marker + line)
+            lines.append(line)
+            NSLog("%@", "SFS_APP_TRACE:" + line)
         }
         let completion = onEmission
         stop()
-        completion?()
+        completion?(lines.joined(separator: "\n"))
     }
 
     private func appendFocusedElement(_ element: NSObject) {

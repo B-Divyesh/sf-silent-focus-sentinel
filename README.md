@@ -37,7 +37,7 @@ The UI test performs one-finger swipe-right gestures. A test-only bridge uses pu
 
 Use the same integration in your app by copying [`SilentFocusSentinelVoiceOverCapture.swift`](examples/ios/SilentFocusSentinelVoiceOverCapture.swift). The runnable app lifecycle is in [`AppDelegate.swift`](examples/ios/SilentFocusSentinelExample/AppDelegate.swift). The traversal is in [`CheckoutFocusTraversalTests.swift`](examples/ios/CheckoutFocusTraversalTests.swift).
 
-The observer is not given a caller-selected element list. It records an inserted silent stop when VoiceOver reaches it. Each captured stop prints one `SFS_VOICEOVER_STOP:` JSON line with its order and effective announcement.
+The observer is not given a caller-selected element list. It records an inserted silent stop only when VoiceOver reaches it. The app serializes those observed stops, and the UI test relays each one as an `SFS_VOICEOVER_STOP:` JSON line for the CLI.
 
 ```sh
 silent-focus-sentinel record-xctest \
