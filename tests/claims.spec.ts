@@ -184,7 +184,8 @@ test('@claim:public-xctest-helper uses public Simulator VoiceOver focus notifica
   expect(traversal).toContain('VoiceOver enabled');
   expect(capture).not.toContain('captureScriptedFocusStop');
   expect(appDelegate).toContain('private let capture = SilentFocusSentinelVoiceOverCapture()');
-  expect(appDelegate).toContain('capture.start(emitAfterFocusing: "checkout.capture-end")');
+  expect(appDelegate).toContain('capture.start { payload in');
+  expect(appDelegate).toContain('capture.emitCapturedTrace()');
   expect(example).toContain('UISwipeGestureRecognizer');
   expect(example).toContain('UIAccessibility.post(notification: .layoutChanged, argument: stop)');
   expect(existsSync(join(root, 'examples/ios/SilentFocusSentinelExample.xcodeproj/project.pbxproj'))).toBe(true);

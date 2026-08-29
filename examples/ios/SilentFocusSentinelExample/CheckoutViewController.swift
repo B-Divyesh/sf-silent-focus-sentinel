@@ -2,6 +2,7 @@ import UIKit
 
 final class CheckoutViewController: UIViewController {
     var startCapture: (() -> Void)?
+    var finishTraversal: (() -> Void)?
     private let endStop = UIView()
     private var traversalStops: [UIView] = []
     private var traversalIndex = 0
@@ -87,7 +88,10 @@ final class CheckoutViewController: UIViewController {
     }
 
     private func advanceVoiceOverFocus() {
-        guard traversalIndex < traversalStops.count else { return }
+        guard traversalIndex < traversalStops.count else {
+            finishTraversal?()
+            return
+        }
         let stop = traversalStops[traversalIndex]
         traversalIndex += 1
         UIAccessibility.post(notification: .layoutChanged, argument: stop)
