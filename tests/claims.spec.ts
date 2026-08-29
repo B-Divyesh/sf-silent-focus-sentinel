@@ -180,6 +180,7 @@ test('@claim:public-xctest-helper uses public Simulator VoiceOver focus notifica
   const example = readFileSync(join(root, 'examples/ios/SilentFocusSentinelExample/CheckoutViewController.swift'), 'utf8');
   expect(traversal).toContain('silent-focus-sentinel-capture');
   expect(traversal).toContain('app.swipeRight()');
+  expect(traversal).toContain('app.buttons["capture.run"].tap()');
   expect(traversal).toContain('Trace emitted');
   expect(appDelegate).toContain('private let capture = SilentFocusSentinelVoiceOverCapture()');
   expect(appDelegate).toContain('capture.start(emitAfterFocusing: "checkout.capture-end")');
