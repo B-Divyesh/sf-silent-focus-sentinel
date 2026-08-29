@@ -4,6 +4,7 @@ final class CheckoutViewController: UIViewController {
     var startCapture: (() -> Void)?
     var finishTraversal: (() -> Void)?
     private let endStop = UIView()
+    private let payloadStop = UIView()
     private var traversalStops: [UIView] = []
     private var traversalIndex = 0
 
@@ -53,6 +54,12 @@ final class CheckoutViewController: UIViewController {
         endStop.accessibilityIdentifier = "checkout.capture-end"
         endStop.accessibilityLabel = "End capture"
 
+        // This element joins the accessibility tree only after VoiceOver has
+        // finished the traversal. It carries the app-generated JSON to the UI
+        // test without changing the currently focused stop's spoken value.
+        payloadStop.frame = CGRect(x: 0, y: 0, width: 1, height: 1)
+        view.addSubview(payloadStop)
+
         let stack = UIStackView(arrangedSubviews: [voiceOverStatus, runCapture, title, address, unnamed, total, repeatedTotal, pay, endStop])
         stack.axis = .vertical
         stack.spacing = 24
@@ -101,10 +108,10 @@ final class CheckoutViewController: UIViewController {
     }
 
     func markTraceEmitted(_ payload: String) {
-        // The UI-test runner shares the Simulator pasteboard. Keeping the
-        // payload off the focused element prevents VoiceOver from speaking the
-        // JSON while the test is trying to finish.
-        UIPasteboard.general.string = payload
+        payloadStop.isAccessibilityElement = true
+        payloadStop.accessibilityIdentifier = "capture.payload"
+        payloadStop.accessibilityLabel = "Captured trace payload"
+        payloadStop.accessibilityValue = payload
         endStop.accessibilityLabel = "Trace emitted"
     }
 }

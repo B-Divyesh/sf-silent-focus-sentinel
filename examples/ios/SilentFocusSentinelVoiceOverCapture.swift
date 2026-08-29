@@ -69,7 +69,7 @@ final class SilentFocusSentinelVoiceOverCapture {
         for stop in stops {
             guard let data = try? encoder.encode(stop), let line = String(data: data, encoding: .utf8) else { continue }
             lines.append(line)
-            NSLog("%@", "SFS_VOICEOVER_STOP:" + line)
+            NSLog("%@", "SFS_APP_TRACE:" + line)
         }
         let completion = onEmission
         stop()
@@ -77,6 +77,9 @@ final class SilentFocusSentinelVoiceOverCapture {
     }
 
     private func appendFocusedElement(_ element: NSObject) {
+        // Bound malformed or unexpectedly noisy notification streams without
+        // converting caller-selected targets into observations.
+        guard stops.count < 64 else { return }
         let identity = ObjectIdentifier(element)
         // UIKit can send a duplicate callback while the same stop is settling.
         // It is not a new VoiceOver stop, so retain the first callback only.

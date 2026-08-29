@@ -1,6 +1,5 @@
 // UI-test target for the runnable SilentFocusSentinelExample project.
 import XCTest
-import UIKit
 
 final class CheckoutFocusTraversalTests: XCTestCase {
     func testCheckoutFocusTraversal() {
@@ -23,7 +22,9 @@ final class CheckoutFocusTraversalTests: XCTestCase {
         expectation(for: emitted, evaluatedWith: end)
         waitForExpectations(timeout: 10)
 
-        guard let payload = UIPasteboard.general.string, !payload.isEmpty else {
+        let payloadElement = app.otherElements["capture.payload"]
+        XCTAssertTrue(payloadElement.waitForExistence(timeout: 2))
+        guard let payload = payloadElement.value as? String, !payload.isEmpty else {
             return XCTFail("The app did not expose its observed VoiceOver trace")
         }
         for line in payload.split(separator: "\n") {

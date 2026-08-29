@@ -173,7 +173,7 @@ test('@claim:public-xctest-helper uses public Simulator VoiceOver focus notifica
   expect(capture).toContain('UIAccessibility.elementFocusedNotification');
   expect(capture).toContain('UIAccessibility.focusedElementUserInfoKey');
   expect(traversal).toContain('SFS_VOICEOVER_STOP:');
-  expect(traversal).toContain('UIPasteboard.general.string');
+  expect(traversal).toContain('app.otherElements["capture.payload"]');
   expect(capture).toContain('announcement:');
   expect(capture).not.toMatch(/AXUIElement|private.*accessibility/i);
   const appDelegate = readFileSync(join(root, 'examples/ios/SilentFocusSentinelExample/AppDelegate.swift'), 'utf8');
@@ -189,7 +189,7 @@ test('@claim:public-xctest-helper uses public Simulator VoiceOver focus notifica
   expect(appDelegate).toContain('capture.emitCapturedTrace()');
   expect(example).toContain('UISwipeGestureRecognizer');
   expect(example).toContain('UIAccessibility.post(notification: .layoutChanged, argument: stop)');
-  expect(example).toContain('UIPasteboard.general.string = payload');
+  expect(example).toContain('payloadStop.accessibilityValue = payload');
   expect(existsSync(join(root, 'examples/ios/SilentFocusSentinelExample.xcodeproj/project.pbxproj'))).toBe(true);
   expect(existsSync(join(root, 'examples/ios/SilentFocusSentinelExample.xcodeproj/xcshareddata/xcschemes/SilentFocusSentinelExample.xcscheme'))).toBe(true);
   const nativeTests = readFileSync(join(root, 'examples/ios/SilentFocusSentinelVoiceOverCaptureTests.swift'), 'utf8');

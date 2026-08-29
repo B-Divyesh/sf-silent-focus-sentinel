@@ -33,7 +33,7 @@ Every command runs without an account, credentials, or runtime service.
 
 Open the runnable [`SilentFocusSentinelExample.xcodeproj`](examples/ios/SilentFocusSentinelExample.xcodeproj) on a macOS host with Xcode. Enable VoiceOver in the booted Simulator before running it.
 
-The UI test performs one-finger swipe-right gestures. A test-only bridge uses public `UIAccessibility` focus moves because XCTest sends synthetic gestures directly to the app. VoiceOver's real cursor enters each stop, and the retained app observer emits at the final stop.
+The UI test performs a swipe-right gesture. A test-only bridge then uses public `UIAccessibility` focus moves because XCTest sends synthetic gestures directly to the app. VoiceOver's real cursor enters each stop, and the retained app observer emits after the traversal.
 
 Use the same integration in your app by copying [`SilentFocusSentinelVoiceOverCapture.swift`](examples/ios/SilentFocusSentinelVoiceOverCapture.swift). The runnable app lifecycle is in [`AppDelegate.swift`](examples/ios/SilentFocusSentinelExample/AppDelegate.swift). The traversal is in [`CheckoutFocusTraversalTests.swift`](examples/ios/CheckoutFocusTraversalTests.swift).
 
