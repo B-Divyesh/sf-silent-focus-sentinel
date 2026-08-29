@@ -2,7 +2,7 @@
 
 ## Status
 
-Repair branch pushed to `origin/main` at `096e426f6bec8e0a3899085b8ef132b2a7eff6a3`.
+Implementation commit: `096e426f6bec8e0a3899085b8ef132b2a7eff6a3`; this handoff and the finding map are pushed on top of it to `origin/main`.
 
 ## Completed
 
