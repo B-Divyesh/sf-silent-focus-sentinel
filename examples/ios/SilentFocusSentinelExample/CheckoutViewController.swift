@@ -57,10 +57,7 @@ final class CheckoutViewController: UIViewController {
         // This element joins the accessibility tree only after VoiceOver has
         // finished the traversal. It carries the app-generated JSON to the UI
         // test without changing the currently focused stop's spoken value.
-        payloadStop.frame = CGRect(x: 0, y: 0, width: 1, height: 1)
-        view.addSubview(payloadStop)
-
-        let stack = UIStackView(arrangedSubviews: [voiceOverStatus, runCapture, title, address, unnamed, total, repeatedTotal, pay, endStop])
+        let stack = UIStackView(arrangedSubviews: [voiceOverStatus, runCapture, title, address, unnamed, total, repeatedTotal, pay, endStop, payloadStop])
         stack.axis = .vertical
         stack.spacing = 24
         stack.translatesAutoresizingMaskIntoConstraints = false
@@ -70,7 +67,8 @@ final class CheckoutViewController: UIViewController {
             stack.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -24),
             stack.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 32),
             unnamed.heightAnchor.constraint(equalToConstant: 44),
-            endStop.heightAnchor.constraint(equalToConstant: 44)
+            endStop.heightAnchor.constraint(equalToConstant: 44),
+            payloadStop.heightAnchor.constraint(equalToConstant: 44)
         ])
 
         traversalStops = [title, address, unnamed, total, repeatedTotal, pay, endStop]

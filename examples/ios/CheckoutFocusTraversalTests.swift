@@ -23,7 +23,9 @@ final class CheckoutFocusTraversalTests: XCTestCase {
         waitForExpectations(timeout: 10)
 
         let payloadElement = app.otherElements["capture.payload"]
-        XCTAssertTrue(payloadElement.waitForExistence(timeout: 2))
+        guard payloadElement.waitForExistence(timeout: 2) else {
+            return XCTFail("The app did not expose its trace payload element")
+        }
         guard let payload = payloadElement.value as? String, !payload.isEmpty else {
             return XCTFail("The app did not expose its observed VoiceOver trace")
         }
