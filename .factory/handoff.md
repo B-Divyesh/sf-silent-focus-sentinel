@@ -74,7 +74,17 @@ VoiceOver version changes. UIKit does not expose VoiceOver's audio buffer.
 
 ## Deployment
 
-Build output: `dist/site/`. Deployment target:
-`sf-silent-focus-sentinel`, custom URL
-`https://silent-focus-sentinel.sociobot.in`. The final deployment and live
-identity result are recorded below after upload.
+`/opt/fleet/lib/deploy-static.sh silent-focus-sentinel dist/site` uploaded the
+build successfully as deployment `2541c46f-eace-4f04-9bac-52b723311038` to
+Azure Static Web App `sf-silent-focus-sentinel` in `centralus`. The default host
+is `orange-plant-05a460110.7.azurestaticapps.net`; the custom domain returned
+HTTPS 200 and remained Ready.
+
+Post-deploy `npm run verify:live -- https://silent-focus-sentinel.sociobot.in`
+passed all six routes with `axe=0 storage=0 outsideRequests=0`. The factory URL
+smoke test reported no console errors and complete title/lang/h1/main/alt/button
+basics. Every served file matched the local production artifact byte for byte;
+the root SHA-256 on both sides was
+`fe18783e377de66175b35371073e568ff3a64288bc5808a7eb7d249a549a08d5`.
+`staticwebapp.config.json` is deployment configuration and is not a public
+asset, so it is intentionally excluded from served-file identity.
