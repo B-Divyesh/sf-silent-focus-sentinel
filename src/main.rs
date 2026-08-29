@@ -157,6 +157,40 @@ fn path_identity(path: &Path) -> Result<PathBuf, String> {
     Ok(resolved)
 }
 
+/// Compare the object behind two paths as well as their resolved names.
+/// Canonical paths do not expose hard links: two different names can still
+/// refer to the same inode and a write through either name truncates both.
+fn same_file(left: &Path, right: &Path) -> Result<bool, String> {
+    let left_identity = path_identity(left)?;
+    let right_identity = path_identity(right)?;
+    if left_identity == right_identity {
+        return Ok(true);
+    }
+
+    if left.exists() && right.exists() {
+        let left_metadata = fs::metadata(left)
+            .map_err(|error| format!("could not inspect {}: {error}", left.display()))?;
+        let right_metadata = fs::metadata(right)
+            .map_err(|error| format!("could not inspect {}: {error}", right.display()))?;
+
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::MetadataExt;
+            return Ok(left_metadata.dev() == right_metadata.dev()
+                && left_metadata.ino() == right_metadata.ino());
+        }
+
+        #[cfg(not(unix))]
+        {
+            // The supported iOS/macOS and Linux hosts use the inode check
+            // above. Other hosts retain the resolved-path protection.
+            let _ = (left_metadata, right_metadata);
+        }
+    }
+
+    Ok(false)
+}
+
 /// Refuse every destructive or ambiguous report destination before a writer is
 /// opened. This must run before trace parsing too: a malformed input is never a
 /// reason to permit an output that aliases it.
@@ -165,26 +199,23 @@ fn validate_report_paths(
     json: Option<&Path>,
     html: Option<&Path>,
 ) -> Result<(), String> {
-    let input_paths = inputs
-        .iter()
-        .map(|path| path_identity(path))
-        .collect::<Result<Vec<_>, _>>()?;
     let outputs = [("--json", json), ("--html", html)];
     let output_paths = outputs
         .iter()
         .filter_map(|(flag, path)| path.map(|path| (*flag, path)))
-        .map(|(flag, path)| Ok((flag, path, path_identity(path)?)))
-        .collect::<Result<Vec<_>, String>>()?;
+        .collect::<Vec<_>>();
 
-    for (flag, path, identity) in &output_paths {
-        if input_paths.iter().any(|input| input == identity) {
-            return Err(format!(
-                "{flag} path {} matches an input trace; choose a different report path",
-                path.display()
-            ));
+    for (flag, path) in &output_paths {
+        for input in inputs {
+            if same_file(input, path)? {
+                return Err(format!(
+                    "{flag} path {} matches an input trace; choose a different report path",
+                    path.display()
+                ));
+            }
         }
     }
-    if output_paths.len() == 2 && output_paths[0].2 == output_paths[1].2 {
+    if output_paths.len() == 2 && same_file(output_paths[0].1, output_paths[1].1)? {
         return Err(format!(
             "{} and {} use the same path; JSON and HTML reports need different files",
             output_paths[0].0, output_paths[1].0
@@ -437,5 +468,19 @@ mod tests {
         assert!(validate_report_paths(&[&input, &other], Some(&other), None).is_err());
         assert_eq!(fs::read_to_string(&input).unwrap(), "original trace");
         assert_eq!(fs::read_to_string(&other).unwrap(), "other trace");
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn rejects_hard_link_aliases_without_changing_the_input() {
+        let directory = tempdir().unwrap();
+        let input = directory.path().join("trace.json");
+        let json_alias = directory.path().join("report.json");
+        fs::write(&input, "original trace").unwrap();
+        fs::hard_link(&input, &json_alias).unwrap();
+
+        assert!(validate_report_paths(&[&input], Some(&json_alias), None).is_err());
+        assert_eq!(fs::read_to_string(&input).unwrap(), "original trace");
+        assert_eq!(fs::read_to_string(&json_alias).unwrap(), "original trace");
     }
 }

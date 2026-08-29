@@ -1,0 +1,80 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		A10000000000000000000001 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000001 /* AppDelegate.swift */; };
+		A10000000000000000000002 /* CheckoutViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000002 /* CheckoutViewController.swift */; };
+		A10000000000000000000003 /* SilentFocusSentinelVoiceOverCapture.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000003 /* SilentFocusSentinelVoiceOverCapture.swift */; };
+		A10000000000000000000004 /* CheckoutFocusTraversalTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000004 /* CheckoutFocusTraversalTests.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		A30000000000000000000001 = {isa = PBXContainerItemProxy; containerPortal = A90000000000000000000001 /* Project object */; proxyType = 1; remoteGlobalIDString = A70000000000000000000001; remoteInfo = SilentFocusSentinelExample; };
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		A20000000000000000000001 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		A20000000000000000000002 /* CheckoutViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CheckoutViewController.swift; sourceTree = "<group>"; };
+		A20000000000000000000003 /* SilentFocusSentinelVoiceOverCapture.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ../SilentFocusSentinelVoiceOverCapture.swift; sourceTree = "<group>"; };
+		A20000000000000000000004 /* CheckoutFocusTraversalTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CheckoutFocusTraversalTests.swift; sourceTree = "<group>"; };
+		A20000000000000000000005 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		A20000000000000000000006 /* SilentFocusSentinelExample.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SilentFocusSentinelExample.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A20000000000000000000007 /* SilentFocusSentinelExampleUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SilentFocusSentinelExampleUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		A40000000000000000000001 = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
+		A40000000000000000000002 = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		A50000000000000000000001 = {isa = PBXGroup; children = (A50000000000000000000002 /* App */, A50000000000000000000003 /* UI Tests */, A50000000000000000000004 /* Products */); sourceTree = "<group>"; };
+		A50000000000000000000002 /* App */ = {isa = PBXGroup; children = (A20000000000000000000001, A20000000000000000000002, A20000000000000000000003, A20000000000000000000005); path = SilentFocusSentinelExample; sourceTree = "<group>"; };
+		A50000000000000000000003 /* UI Tests */ = {isa = PBXGroup; children = (A20000000000000000000004); name = "UI Tests"; sourceTree = "<group>"; };
+		A50000000000000000000004 /* Products */ = {isa = PBXGroup; children = (A20000000000000000000006, A20000000000000000000007); name = Products; sourceTree = "<group>"; };
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		A70000000000000000000001 /* SilentFocusSentinelExample */ = {isa = PBXNativeTarget; buildConfigurationList = AB0000000000000000000002; buildPhases = (A80000000000000000000001, A40000000000000000000001, A80000000000000000000002); buildRules = (); dependencies = (); name = SilentFocusSentinelExample; productName = SilentFocusSentinelExample; productReference = A20000000000000000000006; productType = "com.apple.product-type.application"; };
+		A70000000000000000000002 /* SilentFocusSentinelExampleUITests */ = {isa = PBXNativeTarget; buildConfigurationList = AB0000000000000000000003; buildPhases = (A80000000000000000000003, A40000000000000000000002, A80000000000000000000004); buildRules = (); dependencies = (A60000000000000000000001); name = SilentFocusSentinelExampleUITests; productName = SilentFocusSentinelExampleUITests; productReference = A20000000000000000000007; productType = "com.apple.product-type.bundle.ui-testing"; };
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		A90000000000000000000001 /* Project object */ = {isa = PBXProject; attributes = {BuildIndependentTargetsInParallel = YES; LastSwiftUpdateCheck = 1600; LastUpgradeCheck = 1600; TargetAttributes = {A70000000000000000000001 = {CreatedOnToolsVersion = 16.0;}; A70000000000000000000002 = {CreatedOnToolsVersion = 16.0; TestTargetID = A70000000000000000000001;};};}; buildConfigurationList = AB0000000000000000000001; compatibilityVersion = "Xcode 14.0"; developmentRegion = en; knownRegions = (en, Base); mainGroup = A50000000000000000000001; productRefGroup = A50000000000000000000004; projectDirPath = ""; projectRoot = ""; targets = (A70000000000000000000001, A70000000000000000000002); };
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		A80000000000000000000002 = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
+		A80000000000000000000004 = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		A80000000000000000000001 = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (A10000000000000000000001, A10000000000000000000002, A10000000000000000000003); runOnlyForDeploymentPostprocessing = 0; };
+		A80000000000000000000003 = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (A10000000000000000000004); runOnlyForDeploymentPostprocessing = 0; };
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		A60000000000000000000001 = {isa = PBXTargetDependency; target = A70000000000000000000001; targetProxy = A30000000000000000000001; };
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		AC0000000000000000000001 = {isa = XCBuildConfiguration; buildSettings = {CLANG_ENABLE_MODULES = YES; IPHONEOS_DEPLOYMENT_TARGET = 17.0; SDKROOT = iphoneos; SWIFT_VERSION = 5.0;}; name = Debug; };
+		AC0000000000000000000002 = {isa = XCBuildConfiguration; buildSettings = {CLANG_ENABLE_MODULES = YES; IPHONEOS_DEPLOYMENT_TARGET = 17.0; SDKROOT = iphoneos; SWIFT_VERSION = 5.0;}; name = Release; };
+		AC0000000000000000000003 = {isa = XCBuildConfiguration; buildSettings = {CURRENT_PROJECT_VERSION = 1; INFOPLIST_FILE = SilentFocusSentinelExample/Info.plist; IPHONEOS_DEPLOYMENT_TARGET = 17.0; MARKETING_VERSION = 1.0; PRODUCT_BUNDLE_IDENTIFIER = in.sociobot.SilentFocusSentinelExample; PRODUCT_NAME = "$(TARGET_NAME)"; SDKROOT = iphoneos; SWIFT_VERSION = 5.0; TARGETED_DEVICE_FAMILY = 1;}; name = Debug; };
+		AC0000000000000000000004 = {isa = XCBuildConfiguration; buildSettings = {CURRENT_PROJECT_VERSION = 1; INFOPLIST_FILE = SilentFocusSentinelExample/Info.plist; IPHONEOS_DEPLOYMENT_TARGET = 17.0; MARKETING_VERSION = 1.0; PRODUCT_BUNDLE_IDENTIFIER = in.sociobot.SilentFocusSentinelExample; PRODUCT_NAME = "$(TARGET_NAME)"; SDKROOT = iphoneos; SWIFT_VERSION = 5.0; TARGETED_DEVICE_FAMILY = 1;}; name = Release; };
+		AC0000000000000000000005 = {isa = XCBuildConfiguration; buildSettings = {GENERATE_INFOPLIST_FILE = YES; IPHONEOS_DEPLOYMENT_TARGET = 17.0; PRODUCT_BUNDLE_IDENTIFIER = in.sociobot.SilentFocusSentinelExampleUITests; PRODUCT_NAME = "$(TARGET_NAME)"; SDKROOT = iphoneos; SWIFT_VERSION = 5.0; TARGETED_DEVICE_FAMILY = 1; TEST_TARGET_NAME = SilentFocusSentinelExample;}; name = Debug; };
+		AC0000000000000000000006 = {isa = XCBuildConfiguration; buildSettings = {GENERATE_INFOPLIST_FILE = YES; IPHONEOS_DEPLOYMENT_TARGET = 17.0; PRODUCT_BUNDLE_IDENTIFIER = in.sociobot.SilentFocusSentinelExampleUITests; PRODUCT_NAME = "$(TARGET_NAME)"; SDKROOT = iphoneos; SWIFT_VERSION = 5.0; TARGETED_DEVICE_FAMILY = 1; TEST_TARGET_NAME = SilentFocusSentinelExample;}; name = Release; };
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		AB0000000000000000000001 = {isa = XCConfigurationList; buildConfigurations = (AC0000000000000000000001, AC0000000000000000000002); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
+		AB0000000000000000000002 = {isa = XCConfigurationList; buildConfigurations = (AC0000000000000000000003, AC0000000000000000000004); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
+		AB0000000000000000000003 = {isa = XCConfigurationList; buildConfigurations = (AC0000000000000000000005, AC0000000000000000000006); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
+/* End XCConfigurationList section */
+	};
+	rootObject = A90000000000000000000001 /* Project object */;
+}

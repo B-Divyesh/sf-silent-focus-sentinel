@@ -40,8 +40,9 @@ pub struct FocusEvent {
     pub hint: String,
     #[serde(default)]
     pub text: String,
-    /// The announcement observed by the Simulator capture.  `text` remains
-    /// accepted for traces made by older scripted runners.
+    /// Author-provided announcement content captured at the focused element.
+    /// UIKit does not expose VoiceOver audio. `text` remains accepted for
+    /// traces made by older scripted runners.
     #[serde(default)]
     pub announcement: String,
     /// Identifies how the stop was captured. New simulator traces use
@@ -53,9 +54,9 @@ pub struct FocusEvent {
 }
 
 impl FocusEvent {
-    /// Prefer the announcement captured from the assistive-technology focus
-    /// stream.  Keeping the legacy text fallback makes existing JSONL runners
-    /// and reports compatible with the original 1.0 file format.
+    /// Prefer content captured from the assistive-technology focus stream.
+    /// Keeping the legacy text fallback makes existing JSONL runners and
+    /// reports compatible with the original 1.0 file format.
     pub fn effective_announcement(&self) -> &str {
         if !self.announcement.trim().is_empty() || self.capture == "voiceover_simulator" {
             &self.announcement

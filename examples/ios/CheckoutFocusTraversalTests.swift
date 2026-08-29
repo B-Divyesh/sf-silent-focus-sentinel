@@ -1,8 +1,4 @@
-// Example UI-test integration. The capture observer belongs in the app target.
-// In the app delegate, when launchArguments contains
-// SilentFocusSentinelVoiceOverCapture.launchArgument, call capture.start();
-// after this test's scripted VoiceOver swipes finish, call capture.emitCapturedTrace().
-// The app observer receives every focused stop, including nodes this test never names.
+// UI-test target for the runnable SilentFocusSentinelExample project.
 import XCTest
 
 final class CheckoutFocusTraversalTests: XCTestCase {
@@ -11,9 +7,19 @@ final class CheckoutFocusTraversalTests: XCTestCase {
         app.launchArguments += ["--silent-focus-sentinel-capture"]
         app.launch()
 
-        // Perform the same VoiceOver next-item gestures your release test uses.
-        // Do not call record(element:) here: the app-side observer is the source
-        // of truth and discovers an inserted silent stop automatically.
         XCTAssertTrue(app.buttons["checkout.pay"].waitForExistence(timeout: 5))
+
+        // With VoiceOver enabled, a one-finger swipe right advances its real
+        // cursor. The app observer, not this test's element queries, records
+        // every focused stop. Repeat past the intentionally unnamed stop until
+        // the final marker tells the app process to emit its JSON Lines.
+        for _ in 0..<8 {
+            app.swipeRight()
+        }
+
+        let end = app.otherElements["checkout.capture-end"]
+        let emitted = NSPredicate(format: "label == %@", "Trace emitted")
+        expectation(for: emitted, evaluatedWith: end)
+        waitForExpectations(timeout: 10)
     }
 }

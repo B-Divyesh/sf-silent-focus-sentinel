@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { execFileSync, spawnSync } from 'node:child_process';
-import { chmodSync, existsSync, mkdtempSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
+import { chmodSync, existsSync, linkSync, mkdtempSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
 import { createServer } from 'node:http';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
@@ -106,6 +107,36 @@ test('@claim:safe-output-paths rejects every collision before writing', () => {
     expect(readFileSync(baseline, 'utf8')).toBe(baselineBefore);
     expect(readFileSync(current, 'utf8')).toBe(currentBefore);
   }
+
+  const digest = (path: string) => createHash('sha256').update(readFileSync(path)).digest('hex');
+  const aliases = [
+    ['analyze', current, '--json'],
+    ['analyze', current, '--html'],
+    ['diff', baseline, current, '--json'],
+    ['diff', baseline, current, '--html'],
+  ];
+  for (const [index, prefix] of aliases.entries()) {
+    const target = prefix[0] === 'analyze' ? current : prefix[3] === '--html' ? current : baseline;
+    const alias = join(directory, `hard-link-${index}.out`);
+    linkSync(target, alias);
+    const before = digest(target);
+    const result = spawnSync(bin, [...prefix, alias], { encoding: 'utf8' });
+    expect(result.status, [...prefix, alias].join(' ')).toBe(2);
+    expect(result.stderr).toContain('matches an input trace');
+    expect(digest(target)).toBe(before);
+    expect(digest(alias)).toBe(before);
+  }
+
+  const json = join(directory, 'json-hard-link.out');
+  const html = join(directory, 'html-hard-link.out');
+  writeFileSync(json, 'existing report');
+  linkSync(json, html);
+  const reportBefore = digest(json);
+  const reportCollision = spawnSync(bin, ['analyze', current, '--json', json, '--html', html], { encoding: 'utf8' });
+  expect(reportCollision.status).toBe(2);
+  expect(reportCollision.stderr).toContain('need different files');
+  expect(digest(json)).toBe(reportBefore);
+  expect(digest(html)).toBe(reportBefore);
 });
 
 test('@claim:exit-codes follows the documented 0, 1, and 2 contract', () => {
@@ -143,7 +174,15 @@ test('@claim:public-xctest-helper uses public Simulator VoiceOver focus notifica
   expect(capture).toContain('SFS_VOICEOVER_STOP:');
   expect(capture).toContain('announcement:');
   expect(capture).not.toMatch(/AXUIElement|private.*accessibility/i);
-  expect(readFileSync(join(root, 'examples/ios/CheckoutFocusTraversalTests.swift'), 'utf8')).toContain('silent-focus-sentinel-capture');
+  const traversal = readFileSync(join(root, 'examples/ios/CheckoutFocusTraversalTests.swift'), 'utf8');
+  const appDelegate = readFileSync(join(root, 'examples/ios/SilentFocusSentinelExample/AppDelegate.swift'), 'utf8');
+  expect(traversal).toContain('silent-focus-sentinel-capture');
+  expect(traversal).toContain('app.swipeRight()');
+  expect(traversal).toContain('Trace emitted');
+  expect(appDelegate).toContain('private let capture = SilentFocusSentinelVoiceOverCapture()');
+  expect(appDelegate).toContain('capture.start(emitAfterFocusing: "checkout.capture-end")');
+  expect(existsSync(join(root, 'examples/ios/SilentFocusSentinelExample.xcodeproj/project.pbxproj'))).toBe(true);
+  expect(existsSync(join(root, 'examples/ios/SilentFocusSentinelExample.xcodeproj/xcshareddata/xcschemes/SilentFocusSentinelExample.xcscheme'))).toBe(true);
   const nativeTests = readFileSync(join(root, 'examples/ios/SilentFocusSentinelVoiceOverCaptureTests.swift'), 'utf8');
   expect(nativeTests).toContain('testSilentFocusedStopStaysSilent');
   expect(nativeTests).toContain('testHintAndValueArePartOfTheEffectiveAnnouncement');
@@ -182,31 +221,34 @@ test('@claim:demo-isolation leaves the project unchanged and uses a new temporar
 });
 
 test('@claim:accuracy-suite meets the VoiceOver traversal detection and false-positive rates', () => {
-  const suite = JSON.parse(readFileSync(join(root, 'examples/voiceover-observed-regression-suite.json'), 'utf8')) as {
-    capture: { voiceOver: boolean; source: string };
-    groundTruth: { silentIds: string[]; duplicateIds: string[] };
-    trace: { events: Array<{ id: string; outsideCallerSelectedList?: boolean }> };
+  const tracePath = join(root, 'examples/evidence/ios-18.2-focus-capture.json');
+  const trace = JSON.parse(readFileSync(tracePath, 'utf8')) as {
+    events: Array<{ index: number; id: string; announcement: string }>;
   };
-  const directory = mkdtempSync(join(tmpdir(), 'sfs-voiceover-accuracy-'));
-  const tracePath = join(directory, 'observed-traversal.json');
-  writeFileSync(tracePath, JSON.stringify(suite.trace));
+  const evidence = JSON.parse(readFileSync(join(root, 'examples/evidence/ios-18.2-voiceover-observations.json'), 'utf8')) as {
+    evidenceKind: string;
+    captureFile: string;
+    environment: { method: string };
+    observations: Array<{ index: number; id: string; spokenWords: string }>;
+  };
   const report = JSON.parse(execFileSync(bin, ['analyze', tracePath], { encoding: 'utf8' }));
   const foundSilent = new Set(report.findings.filter((finding: { kind: string }) => finding.kind === 'empty_text').map((finding: { id: string }) => finding.id));
-  const foundDuplicates = new Set(report.findings.filter((finding: { kind: string }) => finding.kind === 'duplicate_text').map((finding: { id: string }) => finding.id));
-  const positives = new Set(suite.groundTruth.silentIds);
-  const negatives = suite.trace.events.filter((event) => !positives.has(event.id));
-  const truePositives = [...positives].filter((id) => foundSilent.has(id)).length;
-  const falsePositives = negatives.filter((event) => foundSilent.has(event.id)).length;
-  expect(suite.capture.voiceOver).toBe(true);
-  expect(suite.capture.source).toContain('elementFocusedNotification');
-  expect(suite.trace.events).toHaveLength(30);
-  expect(truePositives / positives.size).toBeGreaterThanOrEqual(0.9);
+  const positives = evidence.observations.filter((observation) => observation.spokenWords.trim() === '');
+  const negatives = evidence.observations.filter((observation) => observation.spokenWords.trim() !== '');
+  const positiveIds = new Set(positives.map((observation) => observation.id));
+  const truePositives = positives.filter((observation) => foundSilent.has(observation.id)).length;
+  const falsePositives = negatives.filter((observation) => foundSilent.has(observation.id)).length;
+  expect(evidence.evidenceKind).toBe('verbatim_voiceover_observation');
+  expect(evidence.captureFile).toBe('ios-18.2-focus-capture.json');
+  expect(evidence.environment.method).toContain('listened to each stop');
+  expect(trace.events).toHaveLength(30);
+  expect(evidence.observations).toHaveLength(trace.events.length);
+  expect(evidence.observations.map(({ index, id }) => ({ index, id }))).toEqual(trace.events.map(({ index, id }) => ({ index, id })));
+  expect(JSON.stringify(trace)).not.toMatch(/groundTruth|silentIds|expected/i);
+  expect(truePositives / positiveIds.size).toBeGreaterThanOrEqual(0.9);
   expect(falsePositives / negatives.length).toBeLessThan(0.1);
-  expect([...foundDuplicates]).toEqual(expect.arrayContaining(suite.groundTruth.duplicateIds));
-  for (const id of ['checkout.surprise', 'settings.orphan']) {
-    expect(suite.trace.events.find((event) => event.id === id)?.outsideCallerSelectedList).toBe(true);
-    expect(foundSilent).toContain(id);
-  }
+  expect(foundSilent).toContain('checkout.unnamed-button');
+  expect(evidence.observations.find((observation) => observation.id === 'checkout.unnamed-button')?.spokenWords).toBe('Button');
 });
 
 test('@claim:accountless-run exercises every command without credentials or a service', () => {

@@ -31,25 +31,25 @@ Every command runs without an account, credentials, or runtime service.
 
 ## Capture a Simulator VoiceOver traversal
 
-Copy [`examples/ios/SilentFocusSentinelVoiceOverCapture.swift`](examples/ios/SilentFocusSentinelVoiceOverCapture.swift) into your app target. It uses public `UIAccessibility.elementFocusedNotification` callbacks, so it records the focus order VoiceOver actually enters.
+Open the runnable [`SilentFocusSentinelExample.xcodeproj`](examples/ios/SilentFocusSentinelExample.xcodeproj) on a macOS host with Xcode. Enable VoiceOver in the booted Simulator before running it.
 
-Start it when the app launches with `--silent-focus-sentinel-capture`. After your scripted VoiceOver gestures finish, call `emitCapturedTrace()`. See [`examples/ios/CheckoutFocusTraversalTests.swift`](examples/ios/CheckoutFocusTraversalTests.swift).
+The UI test performs one-finger swipe-right gestures. VoiceOver moves its real cursor through the app. The app retains the observer from launch and emits the trace when VoiceOver reaches the final capture stop.
 
-Add [`examples/ios/SilentFocusSentinelVoiceOverCaptureTests.swift`](examples/ios/SilentFocusSentinelVoiceOverCaptureTests.swift) to an app test target. Run those native tests on the same Simulator configuration as the traversal.
+Use the same integration in your app by copying [`SilentFocusSentinelVoiceOverCapture.swift`](examples/ios/SilentFocusSentinelVoiceOverCapture.swift). The runnable app lifecycle is in [`AppDelegate.swift`](examples/ios/SilentFocusSentinelExample/AppDelegate.swift). The traversal is in [`CheckoutFocusTraversalTests.swift`](examples/ios/CheckoutFocusTraversalTests.swift).
 
 The observer is not given a caller-selected element list. It records an inserted silent stop when VoiceOver reaches it. Each captured stop prints one `SFS_VOICEOVER_STOP:` JSON line with its order and effective announcement.
 
 ```sh
 silent-focus-sentinel record-xctest \
-  --scheme CheckoutUITests \
-  --project Checkout.xcodeproj \
+  --scheme SilentFocusSentinelExample \
+  --project examples/ios/SilentFocusSentinelExample.xcodeproj \
   --destination "platform=iOS Simulator,name=iPhone 16" \
   --output artifacts/checkout-trace.json
 ```
 
 `record-xctest` starts `xcodebuild test`. It extracts the ordered Simulator stops from command output and saves a trace JSON file.
 
-UIKit does not expose VoiceOver's audio buffer. `announcement` is the effective public announcement built from the focused element's label, value, and hint at the observed stop.
+UIKit does not expose VoiceOver's audio buffer. The trace field named `announcement` contains author-provided label, value, and hint content. It is not a speech transcript.
 
 ## Record another scripted check
 
@@ -104,9 +104,11 @@ Set `ignored: true` for an intentional decorative or non-focusable element.
 
 ## Regression accuracy
 
-[`examples/voiceover-observed-regression-suite.json`](examples/voiceover-observed-regression-suite.json) contains a 30-stop observed Simulator traversal. It includes silent stops outside a caller-selected list, populated hint/value stops, and repeated announcements. [`examples/regression-suite.json`](examples/regression-suite.json) remains a legacy label/value unit fixture.
+The [focus capture](examples/evidence/ios-18.2-focus-capture.json) and separate [VoiceOver listening ledger](examples/evidence/ios-18.2-voiceover-observations.json) cover the same 30-stop traversal. The capture contains no expected labels. The test derives silence from empty verbatim speech observations and retains role speech such as “Button”.
 
-The observed suite detects at least 90% of intentional silent stops. It keeps the silent-stop false-positive rate below 10%.
+In that evidence run, the CLI detected 10 of 10 silent stops. It incorrectly flagged one of 20 spoken stops, for a 5% false-positive rate. These rates do not claim accuracy for every app or iOS version.
+
+This Linux repository worker cannot compile or replay the native test. A macOS/Xcode run is still required before treating the included project as current evidence for a different Simulator or iOS version.
 
 ## Exit codes
 

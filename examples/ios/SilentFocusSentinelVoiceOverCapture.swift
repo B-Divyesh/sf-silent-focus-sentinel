@@ -2,9 +2,9 @@
 //
 // It uses public UIKit accessibility notifications to observe the focus stop
 // sequence that VoiceOver actually enters on an iOS Simulator. The observer is
-// deliberately not handed a list of elements: a newly focusable, silent node
-// is recorded when VoiceOver reaches it. Call start() before the test's
-// VoiceOver gesture script and emitCapturedTrace() once the script is idle.
+// deliberately not handed a list of elements: a newly focusable node is
+// recorded when VoiceOver reaches it. The runnable example uses a final focus
+// stop as a cross-process completion signal and emits from the app process.
 import Foundation
 import UIKit
 
@@ -22,9 +22,9 @@ private struct SilentFocusVoiceOverStop: Encodable {
 
 /// Observes public `UIAccessibility.elementFocusedNotification` callbacks.
 /// The callback order is the Simulator's VoiceOver traversal order. UIKit does
-/// not expose VoiceOver's audio buffer, so `announcement` records the effective
-/// public accessibility announcement (label, value, and hint) at that focused
-/// stop. This is the supported, deterministic assertion surface for a UI test.
+/// not expose VoiceOver's audio buffer, so `announcement` records only the
+/// author-provided label, value, and hint at that focused stop. It must not be
+/// described as a speech recording or transcript.
 final class SilentFocusSentinelVoiceOverCapture {
     static let launchArgument = "--silent-focus-sentinel-capture"
     private static let marker = "SFS_VOICEOVER_STOP:"
@@ -32,10 +32,17 @@ final class SilentFocusSentinelVoiceOverCapture {
     private var observer: NSObjectProtocol?
     private var stops: [SilentFocusVoiceOverStop] = []
     private var lastObject: ObjectIdentifier?
+    private var endElementID: String?
+    private var onEmission: (() -> Void)?
+    private var emitted = false
 
-    func start() {
+    func start(emitAfterFocusing endElementID: String? = nil, onEmission: (() -> Void)? = nil) {
         precondition(UIAccessibility.isVoiceOverRunning, "Enable VoiceOver in the iOS Simulator before starting capture.")
         stop()
+        stops.removeAll()
+        emitted = false
+        self.endElementID = endElementID
+        self.onEmission = onEmission
         observer = NotificationCenter.default.addObserver(
             forName: UIAccessibility.elementFocusedNotification,
             object: nil,
@@ -56,6 +63,8 @@ final class SilentFocusSentinelVoiceOverCapture {
     /// Prints JSON Lines that `record-xctest` extracts from xcodebuild output.
     /// Keep this call in the app after the UI test has completed its traversal.
     func emitCapturedTrace() {
+        guard !emitted else { return }
+        emitted = true
         let encoder = JSONEncoder()
         for stop in stops {
             guard let data = try? encoder.encode(stop), let line = String(data: data, encoding: .utf8) else { continue }
@@ -63,7 +72,9 @@ final class SilentFocusSentinelVoiceOverCapture {
             // `record-xctest` searches for the marker after any log prefix.
             NSLog("%@", Self.marker + line)
         }
+        let completion = onEmission
         stop()
+        completion?()
     }
 
     private func appendFocusedElement(_ element: NSObject) {
@@ -90,11 +101,18 @@ final class SilentFocusSentinelVoiceOverCapture {
             capture: "voiceover_simulator",
             ignored: false
         ))
+
+        // The UI-test process cannot call this app-process object. A final
+        // traversal stop is the deterministic completion signal shared by
+        // both processes; emission therefore happens in the app itself.
+        if id == endElementID {
+            DispatchQueue.main.async { [weak self] in self?.emitCapturedTrace() }
+        }
     }
 
-    /// Matches the user-facing content VoiceOver receives from public UIKit
-    /// accessibility properties. Trait names are diagnostic metadata, not a
-    /// substitute for an announced control name.
+    /// Captures author-provided accessibility content. This is not a recording
+    /// or transcript of VoiceOver speech; the independent observation ledger
+    /// used by the accuracy test is kept separate from these fields.
     static func effectiveAnnouncement(label: String, value: String, hint: String) -> String {
         [label, value, hint]
             .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
