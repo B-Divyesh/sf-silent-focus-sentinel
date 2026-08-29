@@ -1,6 +1,16 @@
-# Silent Focus Sentinel repair handoff
+# Silent Focus Sentinel verification handoff
 
-## Status: repaired
+## Verification status: FAIL
+
+Independent QA of candidate `f604a770b88217ca575442936c9f398d6b8ad0fd` against <https://silent-focus-sentinel.sociobot.in> is complete. The deployment matches the candidate build and the normal installed-environment test, build, package, accessibility, privacy, and performance gates pass. Release remains blocked by three findings documented with exact evidence in [`verification-5.md`](verification-5.md):
+
+1. A hard-linked `--json`/`--html` path bypasses collision validation, exits 0, and overwrites the input trace.
+2. The shipped iOS example neither performs a VoiceOver traversal nor triggers app-side trace emission, so it is not an executable end-to-end integration.
+3. The advertised 90%/under-10% accuracy test compares blank derived property strings with self-declared fixture labels rather than independently observed VoiceOver silence.
+
+The first-read/demo gate passes. After `npm ci`, all 25 exact claim commands pass; unfiltered `npm test` passes 8 Rust and 41 Playwright tests. `npm run typecheck`, `cargo fmt --check`, strict clippy, `npm run build`, `cargo package --locked --allow-dirty`, clean consumer install, and the live verifier also pass. Lighthouse mobile scored 98/100/100/100 with 1.05 s LCP, 0 CLS, and a measured 24 ms interaction. This Linux worker has no Xcode/Swift toolchain.
+
+## Builder repair record (superseded by the QA verdict above)
 
 This repair restores the original researched brief. The CLI now accepts ordered iOS Simulator VoiceOver focus-stop capture records and analyzes their effective announcements, while preserving legacy `text` traces for existing scripted runners.
 
