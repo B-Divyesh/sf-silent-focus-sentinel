@@ -1,40 +1,37 @@
-# Silent Focus Sentinel review 2 handoff
+# Silent Focus Sentinel polish 2 handoff
 
-## Status: FAIL
+## Status
 
-Adversarial review 2 is recorded in `.factory/review-2.md` for commit `9679985bca27c061cb1f14f1c93ef829ca7f9bd7`. Product code was not modified.
+Repair branch pushed to `origin/main` at `096e426f6bec8e0a3899085b8ef132b2a7eff6a3`.
 
-## Work completed
+## Completed
 
-- Captured cold live first reads at 390×844 and 1440×900 before inspecting implementation copy.
-- Entered the one-click browser demo, checked realistic first-screen data, Reset demo, Start for real, download, browser storage isolation, and request origins.
-- Ran all 22 literal claim commands separately from clean clone `/tmp/sfs-review2-clean-3cPeh7`; all passed.
-- Ran the unfiltered unit/browser suite, build, live verifier, formatting, clippy, and Cargo packaging; all passed.
-- Installed the CLI with the exact landing-page Git command and ran its demo from an unrelated empty temporary directory.
-- Crawled live routes and links, checked raw/runtime metadata, history/focus, 404 behavior, accessibility, mobile overflow, and live/build artifact identity.
-- Rechecked all 20 findings from review 1 against live behavior and current code.
-- Audited every landing and README sentence, heading, action, and status message with word counts.
+- Resolved every finding from review rounds 1 and 2; the exact mapping is in `.factory/polish-2.md`.
+- Replaced the simulated terminal panel with a self-hosted SVG recording generated from the release binary's real demo output. The build regenerates it and its tagged claim prevents drift.
+- Made `/demo` the metadata-correct public demo link while preserving isolated direct `?demo=1` mode with its banner, reset, and real-storage separation.
+- Added and tested the browser-ready, CLI-recording, and Web Content Accessibility Guidelines boundary claims; `.factory/claims.json` now has 25 entries.
+- Corrected the demo terminology, first-screen result text, README deployment guidance, automated-build wording, catalog description, and legal/boundary language.
+- Made `npm run build:site` self-sufficient for the configured static work order (`npm ci && npm run build:site`) by building the release binary before recording it.
 
-## Result
+## Verification evidence
 
-Seven findings remain:
+- Clean clone: `/tmp/sfs-polish2-clean-vgZDSY`.
+- Every literal command in `.factory/claims.json` passed separately; log: `/tmp/sfs-polish2-claims-5QjHec/claims.log` (25 claims).
+- Clean-clone unfiltered `npm test`: **41 passed**; log: `/tmp/sfs-polish2-claims-5QjHec/full-suite-repair.log`.
+- Local: `npm run build:site`, `npm run build`, `cargo fmt --check`, `cargo clippy --all-targets --all-features -- -D warnings`, and `cargo package --locked` passed. The Cargo package contains 15 files and is 53.6 KiB unpacked.
+- Browser suite checks route titles/metadata/404, keyboard focus, 390px overflow, 44px targets, reduced motion, demo reset, storage/network privacy, and Axe. Axe found no serious or critical issues on all tested routes.
+- Production bundle: 12.91 KiB JS raw (4.83 KiB gzip), 12.81 KiB CSS raw (3.69 KiB gzip), 13.28 KiB font, 33.42 KiB hero, and 224 KiB total `dist/site`.
 
-- F-2-1 blocking: the CLI-specific landing artifact is a hand-authored terminal transcript, not a self-hosted recording of the real binary.
-- F-2-2 and F-2-4: two public promises are absent from `.factory/claims.json`.
-- F-2-3: the actual `?demo=1` entry returns landing metadata to non-JavaScript clients.
-- F-2-5: the demo introduces the competing term “intentional ignore”.
-- F-2-6: README deployment guidance is missing.
-- F-2-7: README uses the avoidable abbreviation “CI”.
+## Deploy and live check
 
-## Verification commands
+The work-order deployment is static: `npm ci && npm run build:site`, publishing `dist/site/`. The repair has been pushed. The external static host was still serving its preceding artifact during this worker turn, so its cold live recheck must be run after propagation with:
 
 ```sh
-npm ci
-npm test
 npm run verify:live -- https://silent-focus-sentinel.sociobot.in
-cargo fmt --check
-cargo clippy --all-targets --all-features -- -D warnings
-cargo package --locked
 ```
 
-The complete claim-by-claim results, copy audits, evidence, and concrete fixes are in `.factory/review-2.md`.
+That command writes the required live screenshots to `.factory/evidence/polish-2/` and checks cold routes, metadata, console, storage, same-origin requests, touch targets, overflow, and Axe.
+
+## Known gaps
+
+None in the repository or local verification. The only outstanding external state is static-host propagation after the pushed repair.
