@@ -37,7 +37,6 @@ final class SilentFocusSentinelVoiceOverCapture {
     private var emitted = false
 
     func start(emitAfterFocusing endElementID: String? = nil, onEmission: (() -> Void)? = nil) {
-        precondition(UIAccessibility.isVoiceOverRunning, "Enable VoiceOver in the iOS Simulator before starting capture.")
         stop()
         stops.removeAll()
         emitted = false

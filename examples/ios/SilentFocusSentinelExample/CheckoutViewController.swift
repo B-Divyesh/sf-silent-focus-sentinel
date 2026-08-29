@@ -22,6 +22,10 @@ final class CheckoutViewController: UIViewController {
         runCapture.accessibilityIdentifier = "capture.run"
         runCapture.addTarget(self, action: #selector(startVoiceOverTraversal), for: .touchUpInside)
 
+        let voiceOverStatus = UILabel()
+        voiceOverStatus.text = UIAccessibility.isVoiceOverRunning ? "VoiceOver enabled" : "VoiceOver disabled"
+        voiceOverStatus.accessibilityIdentifier = "voiceover.status"
+
         let address = UIButton(type: .system)
         address.setTitle("Delivery address", for: .normal)
         address.accessibilityIdentifier = "checkout.address"
@@ -49,7 +53,7 @@ final class CheckoutViewController: UIViewController {
         endStop.accessibilityIdentifier = "checkout.capture-end"
         endStop.accessibilityLabel = "End capture"
 
-        let stack = UIStackView(arrangedSubviews: [runCapture, title, address, unnamed, total, repeatedTotal, pay, endStop])
+        let stack = UIStackView(arrangedSubviews: [voiceOverStatus, runCapture, title, address, unnamed, total, repeatedTotal, pay, endStop])
         stack.axis = .vertical
         stack.spacing = 24
         stack.translatesAutoresizingMaskIntoConstraints = false

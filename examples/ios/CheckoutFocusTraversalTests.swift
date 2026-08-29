@@ -8,6 +8,7 @@ final class CheckoutFocusTraversalTests: XCTestCase {
         app.launch()
 
         XCTAssertTrue(app.buttons["checkout.pay"].waitForExistence(timeout: 5))
+        XCTAssertEqual(app.staticTexts["voiceover.status"].label, "VoiceOver enabled")
 
         // Exercise the same next-item gesture used by VoiceOver, then activate
         // the deterministic app-side traversal. XCUITest routes synthetic
