@@ -6,7 +6,7 @@ Silent Focus Sentinel is a local command-line tool for iOS teams. Your XCTest ch
 
 The helper reads each element's public XCTest label and string value. The CLI writes JSON and HTML findings.
 
-It does not observe the VoiceOver cursor, speech, traits, or hints. It does not certify WCAG conformance.
+It does not observe the VoiceOver cursor, speech, traits, or hints. It does not certify Web Content Accessibility Guidelines (WCAG) conformance.
 
 ## Try the bundled demo
 
@@ -16,7 +16,7 @@ cargo run -- demo
 
 The command creates a new operating-system temporary directory. It copies the bundled checkout trace and writes both report formats there.
 
-Nothing is added to or changed in your project directory. The browser demo opens at <https://silent-focus-sentinel.sociobot.in/?demo=1>.
+Nothing is added to or changed in your project directory. The browser demo opens at <https://silent-focus-sentinel.sociobot.in/demo>.
 
 ## Install
 
@@ -84,7 +84,7 @@ silent-focus-sentinel diff examples/baseline-trace.json examples/sample-trace.js
   --fail-on regressions
 ```
 
-The report marks new and resolved findings. Omit `--json` to print the JSON report to standard output for CI.
+The report marks new and resolved findings. Omit `--json` to print the JSON report to standard output for an automated build.
 
 Every report path must differ from each input path. The JSON and HTML paths must also differ.
 
@@ -123,6 +123,12 @@ npm run build
 `npm run build` creates the release binary at `target/release/silent-focus-sentinel`.
 
 It creates the static site in `dist/site/`. Package with `cargo package --allow-dirty`; the factory owns registry publishing.
+
+## Deploy
+
+`npm run build` produces the static deployment artifact in `dist/site/`. The factory publishes that directory through its work order.
+
+Do not change DNS, billing, or infrastructure from this repository.
 
 ## Privacy
 

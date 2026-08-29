@@ -21,7 +21,7 @@ for (const route of ['/', '/?demo=1', '/demo', '/privacy', '/terms', '/missing']
 test('navigation updates URL, title, and heading focus', async ({ page }) => {
   await page.goto('/');
   await page.getByRole('link', { name: 'Try it with sample data' }).click();
-  await expect(page).toHaveURL(/\?demo=1$/);
+  await expect(page).toHaveURL(/\/demo$/);
   await expect(page).toHaveTitle('Demo — Silent Focus Sentinel');
   await expect(page.locator('h1')).toBeFocused();
   await page.goBack();
@@ -39,7 +39,7 @@ test('390px layout keeps content within the viewport', async ({ page }) => {
 
 test('demo is useful on the first mobile screen and resets without touching real storage', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto('/?demo=1');
+  await page.goto('/demo');
   await page.evaluate(() => localStorage.setItem('real:marker', 'keep'));
   await expect(page.getByText('Demo — sample data, nothing is saved')).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Two elements need review' })).toBeVisible();
@@ -102,6 +102,21 @@ test('built static routes have specific metadata and unknown paths retain a conf
     expect(html.match(/<meta property="og:title"/g)).toHaveLength(1);
     expect(html).not.toContain('catch silent focus stops');
   }
+  const source = readFileSync('site/src/main.ts', 'utf8');
+  expect(source).toContain('href="/demo" data-link>Try it with sample data');
+  expect(readFileSync('dist/site/demo/index.html', 'utf8')).toContain('<title>Demo — Silent Focus Sentinel</title>');
+});
+
+test('the landing ships a generated recording of the real CLI demo', async ({ page }) => {
+  await page.goto('/');
+  const recording = page.getByRole('img', { name: /Terminal recording/ });
+  await expect(recording).toBeVisible();
+  await expect(recording).toHaveAttribute('src', '/demo-recording.svg');
+  const svg = readFileSync('site/public/demo-recording.svg', 'utf8');
+  expect(svg).toContain('$ silent-focus-sentinel demo');
+  expect(svg).toContain('Found 2 findings across 6 checked elements.');
+  await page.getByRole('button', { name: 'Read the terminal transcript' }).click();
+  await expect(page.getByText('JSON: /tmp/silent-focus-sentinel-demo-…/focus-report.json')).toBeVisible();
 });
 
 test('keyboard reaches the primary action with a visible focus ring', async ({ page }) => {

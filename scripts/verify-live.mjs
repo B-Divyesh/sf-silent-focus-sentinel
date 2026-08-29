@@ -4,14 +4,14 @@ import assert from 'node:assert/strict';
 import { mkdir } from 'node:fs/promises';
 
 const origin = process.argv[2] ?? 'https://silent-focus-sentinel.sociobot.in';
-const evidence = '.factory/evidence/polish-1';
+const evidence = '.factory/evidence/polish-2';
 await mkdir(evidence, { recursive: true });
 
 const browser = await chromium.launch();
 const routes = [
   ['/', 200, 'Silent Focus Sentinel — flag empty iOS text'],
-  ['/?demo=1', 200, 'Demo — Silent Focus Sentinel'],
   ['/demo', 200, 'Demo — Silent Focus Sentinel'],
+  ['/?demo=1', 200, 'Demo — Silent Focus Sentinel'],
   ['/privacy', 200, 'Privacy — Silent Focus Sentinel'],
   ['/terms', 200, 'Terms — Silent Focus Sentinel'],
   ['/definitely-missing-polish-1', 404, 'Page not found — Silent Focus Sentinel'],
@@ -54,7 +54,7 @@ try {
   await page.goto(origin);
   await page.evaluate(() => localStorage.setItem('real:marker', 'keep'));
   await page.getByRole('link', { name: 'Try it with sample data' }).click();
-  assert.match(page.url(), /\?demo=1$/);
+  assert.match(page.url(), /\/demo$/);
   assert.equal(await page.getByText('Demo — sample data, nothing is saved').isVisible(), true);
   assert.ok((await page.getByText('2 findings').boundingBox()).y < 844, 'demo result is on the first mobile screen');
   await page.getByRole('button', { name: 'Reset demo' }).click();
@@ -92,7 +92,7 @@ try {
 
   const crawlContext = await browser.newContext();
   const crawl = await crawlContext.newPage();
-  for (const route of ['/', '/?demo=1', '/privacy', '/terms']) {
+  for (const route of ['/', '/demo', '/privacy', '/terms']) {
     await crawl.goto(`${origin}${route}`);
     const links = await crawl.locator('a').evaluateAll((anchors) => anchors.map((anchor) => anchor.href));
     for (const href of links) {

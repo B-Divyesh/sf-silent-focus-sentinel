@@ -2,7 +2,7 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises';
 
 const origin = 'https://silent-focus-sentinel.sociobot.in';
 const routes = [
-  { output: 'demo/index.html', title: 'Demo — Silent Focus Sentinel', description: 'Review seven sample XCTest elements with empty text, duplicate text, and an intentional ignore.', canonical: `${origin}/demo` },
+  { output: 'demo/index.html', title: 'Demo — Silent Focus Sentinel', description: 'Review seven sample XCTest elements with empty text, duplicate text, and an ignored decorative element.', canonical: `${origin}/demo` },
   { output: 'privacy/index.html', title: 'Privacy — Silent Focus Sentinel', description: 'Read how Silent Focus Sentinel handles local trace files and website data.', canonical: `${origin}/privacy` },
   { output: 'terms/index.html', title: 'Terms — Silent Focus Sentinel', description: 'Read the license, purpose, and warranty terms for Silent Focus Sentinel.', canonical: `${origin}/terms` },
   { output: '404.html', title: 'Page not found — Silent Focus Sentinel', description: 'This page does not exist. Return to Silent Focus Sentinel.', canonical: `${origin}/404.html` },

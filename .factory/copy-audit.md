@@ -11,7 +11,7 @@ Audited 2026-08-29. Counts include headings, actions, facts, captions, status te
 | H1 | Flag empty text in scripted iOS checks | 7 | — |
 | First-screen sentence | For iOS teams comparing labels and values in an app-defined XCTest order. | 12 | — |
 | Primary action | Try it with sample data | 5 | — |
-| Action result | Loads a finished report | 4 | — |
+| Action result | Opens a finished sample report | 5 | — |
 | Facts | No upload · Works without an account · MIT licensed | 8 | — |
 | Image alternative | A luminous sequence of check points with one coral gap. | 10 | — |
 | Figure caption | Aqua marks populated text. Coral marks empty label/value text. | 9 | — |
@@ -29,13 +29,13 @@ Audited 2026-08-29. Counts include headings, actions, facts, captions, status te
 | Demo H2 | Run the bundled CLI demo | 5 | — |
 | Demo sentence | The demo copies a checkout trace into a new temporary directory. | 11 | — |
 | Demo sentence | It writes both report formats there. | 6 | — |
-| Terminal status | Demo — sample data, nothing was saved outside this temporary directory. | 10 | — |
-| Terminal results | 1 empty text finding · 1 duplicate text finding · 1 decorative element ignored | 13 | — |
+| Recording summary | The recording runs the release binary on the bundled sample. | 10 | — |
+| Recording transcript | Found 2 findings across 6 checked elements. | 7 | — |
 | Boundaries H2 | Know what the check measures | 6 | — |
 | Boundary sentence | The helper reads each selected element's public XCTest label and string value. | 11 | — |
 | Boundary sentence | It does not observe the VoiceOver cursor, speech, traits, or hints. | 11 | — |
-| Boundary sentence | It does not certify WCAG conformance. | 6 | — |
-| Boundary sentence | Ignore an intentional decorative element with ignored set to true. | 10 | — |
+| Boundary sentence | It does not certify Web Content Accessibility Guidelines (WCAG) conformance. | 10 | — |
+| Boundary sentence | Ignore a decorative element with ignored set to true. | 9 | — |
 | Install H2 | Install one local binary | 4 | — |
 | Copy action | Copy install command | 3 | — |
 | Copy success | Install command copied | 3 | — |

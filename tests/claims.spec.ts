@@ -168,7 +168,7 @@ test('@claim:demo-isolation leaves the project unchanged and uses a new temporar
   await page.goto('/');
   await page.evaluate(() => localStorage.setItem('real:marker', 'keep'));
   await page.getByRole('link', { name: 'Try it with sample data' }).click();
-  await expect(page).toHaveURL(/\?demo=1$/);
+  await expect(page).toHaveURL(/\/demo$/);
   await page.getByRole('button', { name: 'Reset demo' }).click();
   expect(await page.evaluate(() => localStorage.getItem('real:marker'))).toBe('keep');
 });
@@ -267,6 +267,48 @@ test('@claim:sample-download exports the isolated demo trace', async ({ page }) 
   expect(trace.events).toHaveLength(7);
   expect(trace.events[2].text).toBe('');
   expect(trace.events[2]).not.toHaveProperty('announcement');
+});
+
+test('@claim:browser-demo-ready opens a finished report and reset restores its sample state', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/');
+  await page.getByRole('link', { name: 'Try it with sample data' }).click();
+  await expect(page).toHaveURL(/\/demo$/);
+  await expect(page.getByText('Demo — sample data, nothing is saved')).toBeVisible();
+  await expect(page.locator('.trace-item')).toHaveCount(7);
+  await expect(page.getByText('2 findings')).toBeVisible();
+  expect((await page.getByText('2 findings').boundingBox())!.y).toBeLessThan(844);
+  const download = page.waitForEvent('download');
+  await page.getByRole('button', { name: 'Download sample JSON' }).click();
+  await download;
+  await expect(page.locator('#download-status')).toHaveText('Sample JSON downloaded.');
+  await page.getByRole('button', { name: 'Reset demo' }).click();
+  await expect(page.locator('#download-status')).toBeEmpty();
+  await expect(page.locator('.trace-item')).toHaveCount(7);
+  await expect(page.getByRole('button', { name: 'Reset demo' })).toBeFocused();
+});
+
+test('@claim:no-wcag-certification publishes a boundary, not a certification result', async ({ page }) => {
+  const help = spawnSync(bin, ['--help'], { encoding: 'utf8' });
+  expect(help.status).toBe(0);
+  expect(help.stdout).not.toMatch(/wcag|conformance|certif/i);
+  const report = analyzeSample();
+  expect(JSON.stringify(report)).not.toMatch(/wcag|conformance|certif/i);
+  const directory = mkdtempSync(join(tmpdir(), 'sfs-wcag-'));
+  const html = join(directory, 'report.html');
+  execFileSync(bin, ['analyze', sampleTrace, '--html', html]);
+  expect(readFileSync(html, 'utf8')).not.toMatch(/wcag|conformance|certif/i);
+  await page.goto('/');
+  await expect(page.getByText('It does not certify Web Content Accessibility Guidelines (WCAG) conformance.')).toBeVisible();
+  await page.goto('/terms');
+  await expect(page.getByText(/does not observe VoiceOver or certify Web Content Accessibility Guidelines/)).toBeVisible();
+  expect(readFileSync(join(root, 'README.md'), 'utf8')).toContain('It does not certify Web Content Accessibility Guidelines (WCAG) conformance.');
+});
+
+test('@claim:cli-demo-recording regenerates the checked-in terminal recording from the current binary', () => {
+  const output = join(mkdtempSync(join(tmpdir(), 'sfs-recording-')), 'demo-recording.svg');
+  execFileSync('node', ['site/scripts/capture-demo-recording.mjs', '--binary', bin, '--output', output], { cwd: root });
+  expect(readFileSync(output, 'utf8')).toBe(readFileSync(join(root, 'site/public/demo-recording.svg'), 'utf8'));
 });
 
 test('@claim:open-source package carries the MIT license', () => {

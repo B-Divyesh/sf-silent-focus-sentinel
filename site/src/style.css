@@ -20,6 +20,9 @@ html,body{overflow-x:clip}.hero{overflow:clip}
 .empty .node{width:17px;height:17px;margin-left:5px;border-color:var(--coral);box-shadow:0 0 18px var(--coral)}
 .empty .state-label{color:var(--coral)}
 
+/* The CLI artifact is generated from the binary, with a disclosure for the exact transcript. */
+.terminal-recording{margin:0;max-width:760px}.terminal-recording img{display:block;width:100%;height:auto;border:1px solid var(--grid);border-radius:14px;box-shadow:0 30px 80px #0008}.terminal-recording figcaption{margin-top:12px;color:var(--mist);font-size:14px}.terminal-recording summary{display:inline-flex;align-items:center;min-height:44px;cursor:pointer;color:var(--aqua);font-weight:700}.terminal-recording pre{margin:8px 0 0;padding:16px;overflow:auto;border-left:1px solid var(--grid);color:#dcecf8;font:13px/1.6 ui-monospace,monospace}
+
 @media(max-width:760px){
   .hero h1{font-size:clamp(3rem,14vw,4.5rem);max-width:10ch}
   .hero-art figcaption{left:16px;right:16px}
@@ -28,4 +31,5 @@ html,body{overflow-x:clip}.hero{overflow:clip}
   .trace-copy{min-width:0}
   .trace-copy strong,.trace-copy code,.workflow code{overflow-wrap:anywhere}
   .workflow li{grid-template-columns:48px minmax(0,1fr)}
+  .terminal-recording pre{font-size:12px;padding:14px}
 }

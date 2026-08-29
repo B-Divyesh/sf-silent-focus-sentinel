@@ -1,1 +1,1 @@
-Flag empty or duplicate label/value text in app-defined iOS XCTest checks.
+Find empty or duplicate label/value text in scripted iOS XCTest checks.
