@@ -11,6 +11,7 @@
     "build": "npm run typecheck && npm run build:cli && npm run build:site",
     "test:unit": "cargo test",
     "test:e2e": "playwright test",
+    "verify:live": "node scripts/verify-live.mjs",
     "test": "node scripts/test.mjs"
   },
   "devDependencies": {
