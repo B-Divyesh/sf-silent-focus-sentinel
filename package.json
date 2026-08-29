@@ -7,7 +7,7 @@
     "dev": "vite --config site/vite.config.ts",
     "build:cli": "cargo build --release",
     "build:recording": "node site/scripts/capture-demo-recording.mjs",
-    "build:site": "npm run build:recording && vite build --config site/vite.config.ts && node site/scripts/postbuild.mjs",
+    "build:site": "npm run build:cli && npm run build:recording && vite build --config site/vite.config.ts && node site/scripts/postbuild.mjs",
     "typecheck": "tsc --noEmit",
     "build": "npm run typecheck && npm run build:cli && npm run build:site",
     "test:unit": "cargo test",
