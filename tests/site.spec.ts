@@ -115,7 +115,7 @@ test('the landing ships a generated recording of the real CLI demo', async ({ pa
   const svg = readFileSync('site/public/demo-recording.svg', 'utf8');
   expect(svg).toContain('$ silent-focus-sentinel demo');
   expect(svg).toContain('Found 2 findings across 6 checked elements.');
-  await page.getByRole('button', { name: 'Read the terminal transcript' }).click();
+  await page.locator('.terminal-recording summary').click();
   await expect(page.getByText('JSON: /tmp/silent-focus-sentinel-demo-…/focus-report.json')).toBeVisible();
 });
 
