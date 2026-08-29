@@ -189,6 +189,7 @@ test('@claim:public-xctest-helper uses public Simulator VoiceOver focus notifica
   expect(appDelegate).toContain('capture.start { payload in');
   expect(appDelegate).toContain('capture.emitCapturedTrace()');
   expect(appDelegate).toContain('capture.captureObservedVoiceOverFocus(element)');
+  expect(appDelegate).not.toContain('checkout?.startVoiceOverTraversal()');
   expect(example).toContain('UISwipeGestureRecognizer');
   expect(example).toContain('UIAccessibility.post(notification: .layoutChanged, argument: stop)');
   expect(example).toContain('override func accessibilityElementDidBecomeFocused()');

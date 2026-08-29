@@ -15,12 +15,6 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
             self?.capture.start { payload in
                 checkout?.markTraceEmitted(payload)
             }
-            // Headless XCTest does not always deliver its synthetic swipe to
-            // the app. Start the same public focus sequence after launch so
-            // the runnable example remains deterministic on CI and locally.
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
-                checkout?.startVoiceOverTraversal()
-            }
         }
         checkout.finishTraversal = { [weak self] in
             self?.capture.emitCapturedTrace()
