@@ -1,37 +1,49 @@
-# Silent Focus Sentinel polish 2 handoff
+# Silent Focus Sentinel verification 4 handoff
 
-## Status
+## Status: FAIL
 
-Implementation commit: `096e426f6bec8e0a3899085b8ef132b2a7eff6a3`; this handoff and the finding map are pushed on top of it to `origin/main`.
+Candidate `8beb260b20edac4a053c79f432db3be1dd90ced7` was independently verified on 2026-08-29 from a clean checkout and against <https://silent-focus-sentinel.sociobot.in>.
 
-## Completed
+The live deployment is current and all engineering gates pass. Release is blocked by product scope, not deployment: the supplied original brief requires detection of silent or duplicate stops in an observed VoiceOver traversal, while the candidate records only label/value text for elements explicitly selected by an XCTest author. The candidate also changed `.factory/brief.json` and its accuracy fixture to this narrower label/value outcome. That does not satisfy the original acceptance contract.
 
-- Resolved every finding from review rounds 1 and 2; the exact mapping is in `.factory/polish-2.md`.
-- Replaced the simulated terminal panel with a self-hosted SVG recording generated from the release binary's real demo output. The build regenerates it and its tagged claim prevents drift.
-- Made `/demo` the metadata-correct public demo link while preserving isolated direct `?demo=1` mode with its banner, reset, and real-storage separation.
-- Added and tested the browser-ready, CLI-recording, and Web Content Accessibility Guidelines boundary claims; `.factory/claims.json` now has 25 entries.
-- Corrected the demo terminology, first-screen result text, README deployment guidance, automated-build wording, catalog description, and legal/boundary language.
-- Made `npm run build:site` self-sufficient for the configured static work order (`npm ci && npm run build:site`) by building the release binary before recording it.
+The full findings and evidence are in [`.factory/verification-4.md`](verification-4.md).
 
-## Verification evidence
+## Release blockers
 
-- Clean clone: `/tmp/sfs-polish2-clean-vgZDSY`.
-- Every literal command in `.factory/claims.json` passed separately; log: `/tmp/sfs-polish2-claims-5QjHec/claims.log` (25 claims).
-- Clean-clone unfiltered `npm test`: **41 passed**; log: `/tmp/sfs-polish2-claims-5QjHec/full-suite-repair.log`.
-- Local: `npm run build:site`, `npm run build`, `cargo fmt --check`, `cargo clippy --all-targets --all-features -- -D warnings`, and `cargo package --locked` passed. The Cargo package contains 15 files and is 53.6 KiB unpacked.
-- Browser suite checks route titles/metadata/404, keyboard focus, 390px overflow, 44px targets, reduced motion, demo reset, storage/network privacy, and Axe. Axe found no serious or critical issues on all tested routes.
-- Production bundle: 12.91 KiB JS raw (4.83 KiB gzip), 12.81 KiB CSS raw (3.69 KiB gzip), 13.28 KiB font, 33.42 KiB hero, and 224 KiB total `dist/site`.
+1. **High — original job is not delivered end to end.** The helper does not observe or drive VoiceOver focus or speech. It cannot discover an extra silent focus stop outside the caller's chosen element list, and label/value emptiness is not equivalent to an empty VoiceOver announcement.
+2. **High — original accuracy measure is unverified.** The 30-case suite proves 12/12 empty-string positives and 0/18 false positives for the label/value classifier. It contains no observed VoiceOver traversal ground truth and therefore does not prove ≥90% detection with <10% false positives for intentional empty-focus stops.
 
-## Deploy and live check
+Required next step: implement and test a supported simulator capture of ordered assistive-technology stops and effective announcements. If platform restrictions make that impossible, obtain an explicit scope change and document the deviation instead of rewriting the researched brief.
 
-The work-order deployment is static: `npm ci && npm run build:site`, publishing `dist/site/`. The repair has been pushed. The external static host was still serving its preceding artifact during this worker turn, so its cold live recheck must be run after propagation with:
+## Passing evidence
+
+- Mandatory first-read/demo gate passed at 1440×900 and 390×844.
+- All 25 exact `.factory/claims.json` commands passed individually; each selected one tagged test.
+- `npm ci`, `npm test` (6 Rust + 41 Playwright), `npm run typecheck`, `cargo fmt --check`, `cargo clippy --all-targets --all-features -- -D warnings`, `npm run build`, and `cargo package --locked --allow-dirty` passed.
+- The packaged crate installed into a clean Cargo root. Demo, analyze, diff, record, report output, exit codes, invalid input, and collision recovery were exercised.
+- Local/live bytes matched for routed HTML, JS, CSS, font, artwork, OG image, and generated CLI recording.
+- Live desktop/mobile route checks found zero Axe violations, zero unexpected valid-page errors, zero overflow, zero undersized mobile controls, zero storage, and zero cross-origin requests.
+- Security headers and caching policies were present. The unknown route returned 404.
+- Lighthouse mobile: performance 91, accessibility 100, best practices 100, SEO 100, LCP 1,091 ms, CLS 0, total transfer 58,906 B.
+- Bundles: JS 12,906 B raw / 4,866 B gzip; CSS 12,811 B / 3,708 B gzip; font 13,284 B; hero 33,420 B.
+
+## Reproduce
 
 ```sh
+npm ci
+npm test
+npm run typecheck
+cargo fmt --check
+cargo clippy --all-targets --all-features -- -D warnings
+npm run build
+cargo package --locked --allow-dirty
 npm run verify:live -- https://silent-focus-sentinel.sociobot.in
 ```
 
-That command writes the required live screenshots to `.factory/evidence/polish-2/` and checks cold routes, metadata, console, storage, same-origin requests, touch targets, overflow, and Axe.
+`verify-url.sh` is not present. The repository's live verifier and independent Playwright checks covered its required title, language, main, image-alternative, console, privacy, touch-target, overflow, and Axe checks.
 
-## Known gaps
+## Applicability and limits
 
-None in the repository or local verification. The only outstanding external state is static-host propagation after the pushed repair.
+- No server endpoints, unlock calls, auth, payment, AI, analytics, or service worker exist; rate-limit, Entra, billing, backend, and PWA checks are not applicable.
+- This Linux worker could not compile XCTest code or run an iOS Simulator. The current claim test proves marked-line extraction using a fixture executable, not real XCTest execution.
+- Product code was not modified during verification.
