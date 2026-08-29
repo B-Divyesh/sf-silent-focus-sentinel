@@ -2,6 +2,7 @@ import UIKit
 
 final class CheckoutViewController: UIViewController {
     var startCapture: (() -> Void)?
+    var captureCurrentFocus: (() -> Void)?
     private let endStop = UIView()
     private var traversalStops: [UIView] = []
     private var traversalIndex = 0
@@ -77,6 +78,9 @@ final class CheckoutViewController: UIViewController {
         let stop = traversalStops[traversalIndex]
         traversalIndex += 1
         UIAccessibility.post(notification: .layoutChanged, argument: stop)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { [weak self] in
+            self?.captureCurrentFocus?()
+        }
     }
 
     func markTraceEmitted() {

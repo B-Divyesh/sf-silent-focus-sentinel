@@ -16,6 +16,9 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
                 checkout?.markTraceEmitted()
             }
         }
+        checkout.captureCurrentFocus = { [weak self] in
+            self?.capture.captureCurrentVoiceOverFocus()
+        }
         let window = UIWindow(frame: UIScreen.main.bounds)
         window.rootViewController = checkout
         window.makeKeyAndVisible()

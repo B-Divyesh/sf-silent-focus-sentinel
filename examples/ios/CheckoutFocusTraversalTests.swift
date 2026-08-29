@@ -15,6 +15,7 @@ final class CheckoutFocusTraversalTests: XCTestCase {
         // this test's element queries, records the traversal.
         for _ in 0..<7 {
             app.swipeRight()
+            Thread.sleep(forTimeInterval: 1)
         }
 
         let end = app.otherElements["checkout.capture-end"]
