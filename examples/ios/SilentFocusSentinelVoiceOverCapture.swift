@@ -84,8 +84,9 @@ final class SilentFocusSentinelVoiceOverCapture {
         guard identity != lastObject else { return }
         lastObject = identity
 
-        let id = element.accessibilityIdentifier?.isEmpty == false
-            ? element.accessibilityIdentifier!
+        let identifier = (element as? UIAccessibilityIdentification)?.accessibilityIdentifier
+        let id = identifier?.isEmpty == false
+            ? identifier!
             : String(reflecting: type(of: element)) + "#" + String(stops.count + 1)
         let label = element.accessibilityLabel ?? ""
         let value = element.accessibilityValue ?? ""
