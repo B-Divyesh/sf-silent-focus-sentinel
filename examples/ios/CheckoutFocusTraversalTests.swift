@@ -22,14 +22,17 @@ final class CheckoutFocusTraversalTests: XCTestCase {
         expectation(for: emitted, evaluatedWith: end)
         waitForExpectations(timeout: 10)
 
-        let payloadElement = app.otherElements["capture.payload"]
+        let payloadElement = app.staticTexts["capture.payload"]
         guard payloadElement.waitForExistence(timeout: 2) else {
             return XCTFail("The app did not expose its trace payload element")
         }
-        guard let payload = payloadElement.value as? String, !payload.isEmpty else {
+        let payload = payloadElement.label
+        guard !payload.isEmpty else {
             return XCTFail("The app did not expose its observed VoiceOver trace")
         }
-        for line in payload.split(separator: "\n") {
+        let lines = payload.split(separator: "\n")
+        XCTAssertGreaterThanOrEqual(lines.count, 7, "Expected seven app-observed VoiceOver focus notifications")
+        for line in lines {
             print("SFS_VOICEOVER_STOP:\(line)")
         }
     }
