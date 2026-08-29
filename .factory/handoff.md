@@ -39,7 +39,7 @@ cargo package --locked --allow-dirty
 - Artifact class remains a Rust CLI with a static Vite documentation site.
 - Static deployment artifact: `dist/site/`.
 - No service worker, backend, accounts, payments, telemetry, or third-party runtime assets are used. Offline/update checks are not applicable because the product makes no offline/PWA claim.
-- Commit and live deployment identity are recorded after the push in the repair completion message.
+- Repair implementation commit: `ee061f0`; pushed to `origin/main`. The deployment was uploaded from `dist/site/` to Azure Static Web App `sf-silent-focus-sentinel` (production URL `https://orange-plant-05a460110.7.azurestaticapps.net`). The custom domain `https://silent-focus-sentinel.sociobot.in` now serves the repaired title, and `npm run verify:live -- https://silent-focus-sentinel.sociobot.in` passed (`routes=6 axe=0 storage=0 outsideRequests=0`).
 
 ## Known limitation
 
