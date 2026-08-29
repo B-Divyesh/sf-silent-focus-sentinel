@@ -79,7 +79,7 @@ final class CheckoutViewController: UIViewController {
         startCapture?()
     }
 
-    @objc private func startVoiceOverTraversal() {
+    @objc func startVoiceOverTraversal() {
         guard traversalIndex == 0 else { return }
         advanceVoiceOverFocus()
     }
