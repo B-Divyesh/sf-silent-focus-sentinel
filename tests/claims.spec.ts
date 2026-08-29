@@ -171,7 +171,6 @@ test('@claim:public-xctest-helper uses public Simulator VoiceOver focus notifica
   expect(capture).toContain('import UIKit');
   expect(capture).toContain('UIAccessibility.elementFocusedNotification');
   expect(capture).toContain('UIAccessibility.focusedElementUserInfoKey');
-  expect(capture).toContain('UIAccessibility.focusedElement(');
   expect(capture).toContain('SFS_VOICEOVER_STOP:');
   expect(capture).toContain('announcement:');
   expect(capture).not.toMatch(/AXUIElement|private.*accessibility/i);

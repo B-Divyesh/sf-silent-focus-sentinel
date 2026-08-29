@@ -2,7 +2,6 @@ import UIKit
 
 final class CheckoutViewController: UIViewController {
     var startCapture: (() -> Void)?
-    var captureCurrentFocus: (() -> Void)?
     var captureScriptedFocus: ((NSObject) -> Void)?
     private let endStop = UIView()
     private var traversalStops: [UIView] = []
@@ -90,7 +89,6 @@ final class CheckoutViewController: UIViewController {
         traversalIndex += 1
         UIAccessibility.post(notification: .layoutChanged, argument: stop)
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { [weak self] in
-            self?.captureCurrentFocus?()
             self?.captureScriptedFocus?(stop)
         }
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.9) { [weak self] in

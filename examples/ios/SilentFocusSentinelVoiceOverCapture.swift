@@ -60,16 +60,6 @@ final class SilentFocusSentinelVoiceOverCapture {
         lastObject = nil
     }
 
-    /// Polls the public VoiceOver cursor after a scripted focus move. This is
-    /// a fallback for headless Simulator runs where the focus notification can
-    /// be coalesced. It records only the element VoiceOver reports as focused.
-    func captureCurrentVoiceOverFocus() {
-        guard let element = UIAccessibility.focusedElement(
-            using: UIAccessibility.AssistiveTechnologyIdentifier.notificationVoiceOver
-        ) as? NSObject else { return }
-        appendFocusedElement(element)
-    }
-
     /// Records the element targeted by a public accessibility focus move in
     /// the bundled deterministic example. Production integrations should rely
     /// on the focus notification observer above.
