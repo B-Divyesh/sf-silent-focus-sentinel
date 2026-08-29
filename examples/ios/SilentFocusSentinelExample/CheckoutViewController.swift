@@ -33,7 +33,6 @@ private final class FocusObservedButton: UIButton, VoiceOverFocusReporter {
 
 final class CheckoutViewController: UIViewController {
     var startCapture: (() -> Void)?
-    var finishTraversal: (() -> Void)?
     var observeVoiceOverFocus: ((NSObject) -> Void)?
     private let endStop = FocusObservedView()
     private let payloadStop = UILabel()
@@ -131,10 +130,7 @@ final class CheckoutViewController: UIViewController {
     }
 
     private func advanceVoiceOverFocus() {
-        guard traversalIndex < traversalStops.count else {
-            finishTraversal?()
-            return
-        }
+        guard traversalIndex < traversalStops.count else { return }
         let stop = traversalStops[traversalIndex]
         traversalIndex += 1
         UIAccessibility.post(notification: .layoutChanged, argument: stop)

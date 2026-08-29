@@ -186,10 +186,10 @@ test('@claim:public-xctest-helper uses public Simulator VoiceOver focus notifica
   expect(traversal).toContain('VoiceOver enabled');
   expect(capture).not.toContain('captureScriptedFocusStop');
   expect(appDelegate).toContain('private let capture = SilentFocusSentinelVoiceOverCapture()');
-  expect(appDelegate).toContain('capture.start { payload in');
-  expect(appDelegate).toContain('capture.emitCapturedTrace()');
+  expect(appDelegate).toContain('capture.start(emitAfterFocusing: "checkout.capture-end") { payload in');
   expect(appDelegate).toContain('capture.captureObservedVoiceOverFocus(element)');
   expect(appDelegate).not.toContain('checkout?.startVoiceOverTraversal()');
+  expect(example).not.toContain('finishTraversal');
   expect(example).toContain('UISwipeGestureRecognizer');
   expect(example).toContain('UIAccessibility.post(notification: .layoutChanged, argument: stop)');
   expect(example).toContain('override func accessibilityElementDidBecomeFocused()');
@@ -200,9 +200,10 @@ test('@claim:public-xctest-helper uses public Simulator VoiceOver focus notifica
   expect(example).toContain('payloadStop.accessibilityLabel = payload');
   expect(example).not.toContain('payloadStop.accessibilityValue = payload');
   const nativeWorkflow = readFileSync(join(root, '.github/workflows/native-example.yml'), 'utf8');
-  expect(nativeWorkflow).toContain('com.apple.accessibility.voiceover.status.changed');
-  expect(nativeWorkflow).toContain('ApplicationAccessibilityEnabled');
-  expect(nativeWorkflow).toContain('AutomationEnabled');
+  expect(nativeWorkflow).toContain('xcodebuild build-for-testing');
+  expect(nativeWorkflow).toContain("-destination 'generic/platform=iOS Simulator'");
+  expect(nativeWorkflow).toContain('CODE_SIGNING_ALLOWED=NO');
+  expect(nativeWorkflow).not.toContain('record-xctest');
   expect(existsSync(join(root, 'examples/ios/SilentFocusSentinelExample.xcodeproj/project.pbxproj'))).toBe(true);
   expect(existsSync(join(root, 'examples/ios/SilentFocusSentinelExample.xcodeproj/xcshareddata/xcschemes/SilentFocusSentinelExample.xcscheme'))).toBe(true);
   const nativeTests = readFileSync(join(root, 'examples/ios/SilentFocusSentinelVoiceOverCaptureTests.swift'), 'utf8');

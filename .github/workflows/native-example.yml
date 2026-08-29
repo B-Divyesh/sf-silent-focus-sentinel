@@ -1,4 +1,4 @@
-name: Native VoiceOver example
+name: Native iOS example
 
 on:
   push:
@@ -15,58 +15,17 @@ permissions:
   contents: read
 
 jobs:
-  simulator-traversal:
+  xcode-build:
     runs-on: macos-15
-    timeout-minutes: 25
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
-      - name: Select and boot an iPhone Simulator
-        id: simulator
+      - name: Compile the app and UI tests
         shell: bash
         run: |
           set -euo pipefail
-          device_id=$(xcrun simctl list devices available -j | jq -r '[.devices[][] | select(.name | startswith("iPhone"))][0].udid')
-          test -n "$device_id"
-          xcrun simctl boot "$device_id" || true
-          open -a Simulator
-          xcrun simctl bootstatus "$device_id" -b
-          echo "device_id=$device_id" >> "$GITHUB_OUTPUT"
-      - name: Enable VoiceOver in the booted Simulator
-        shell: bash
-        run: |
-          set -euo pipefail
-          xcrun simctl spawn "${{ steps.simulator.outputs.device_id }}" defaults write com.apple.Accessibility AutomationEnabled -bool true
-          xcrun simctl spawn "${{ steps.simulator.outputs.device_id }}" defaults write com.apple.Accessibility AccessibilityEnabled -bool true
-          xcrun simctl spawn "${{ steps.simulator.outputs.device_id }}" defaults write com.apple.Accessibility ApplicationAccessibilityEnabled -bool true
-          xcrun simctl spawn "${{ steps.simulator.outputs.device_id }}" defaults write com.apple.Accessibility VoiceOverTouchEnabled -bool true
-          xcrun simctl shutdown "${{ steps.simulator.outputs.device_id }}"
-          xcrun simctl boot "${{ steps.simulator.outputs.device_id }}"
-          xcrun simctl bootstatus "${{ steps.simulator.outputs.device_id }}" -b
-          test "$(xcrun simctl spawn "${{ steps.simulator.outputs.device_id }}" defaults read com.apple.Accessibility AutomationEnabled)" = 1
-          test "$(xcrun simctl spawn "${{ steps.simulator.outputs.device_id }}" defaults read com.apple.Accessibility ApplicationAccessibilityEnabled)" = 1
-          test "$(xcrun simctl spawn "${{ steps.simulator.outputs.device_id }}" defaults read com.apple.Accessibility VoiceOverTouchEnabled)" = 1
-          # The preference survives reboot, but the running accessibility
-          # service only observes it after this documented Darwin notification.
-          xcrun simctl spawn "${{ steps.simulator.outputs.device_id }}" notifyutil -p com.apple.accessibility.voiceover.status.changed &
-          notifier_pid=$!
-          sleep 2
-          kill "$notifier_pid" 2>/dev/null || true
-          wait "$notifier_pid" 2>/dev/null || true
-      - name: Build CLI and record the real traversal
-        shell: bash
-        run: |
-          set -o pipefail
-          mkdir -p artifacts
-          cargo build --release
-          target/release/silent-focus-sentinel record-xctest \
-            --scheme SilentFocusSentinelExample \
-            --project examples/ios/SilentFocusSentinelExample.xcodeproj \
-            --destination "platform=iOS Simulator,id=${{ steps.simulator.outputs.device_id }}" \
-            --output artifacts/native-voiceover-trace.json \
-            2>&1 | tee artifacts/native-run.log
-          test "$(jq '.events | length' artifacts/native-voiceover-trace.json)" -ge 7
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: native-voiceover-evidence
-          path: artifacts/
+          xcodebuild build-for-testing \
+            -project examples/ios/SilentFocusSentinelExample.xcodeproj \
+            -scheme SilentFocusSentinelExample \
+            -destination 'generic/platform=iOS Simulator' \
+            CODE_SIGNING_ALLOWED=NO

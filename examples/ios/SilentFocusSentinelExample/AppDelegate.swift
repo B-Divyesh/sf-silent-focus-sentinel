@@ -11,13 +11,9 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
     ) -> Bool {
         let checkout = CheckoutViewController()
         checkout.startCapture = { [weak self, weak checkout] in
-            guard ProcessInfo.processInfo.arguments.contains(SilentFocusSentinelVoiceOverCapture.launchArgument) else { return }
-            self?.capture.start { payload in
+            self?.capture.start(emitAfterFocusing: "checkout.capture-end") { payload in
                 checkout?.markTraceEmitted(payload)
             }
-        }
-        checkout.finishTraversal = { [weak self] in
-            self?.capture.emitCapturedTrace()
         }
         checkout.observeVoiceOverFocus = { [weak self] element in
             self?.capture.captureObservedVoiceOverFocus(element)

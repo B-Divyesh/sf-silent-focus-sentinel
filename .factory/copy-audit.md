@@ -15,8 +15,8 @@ Audited 2026-08-29. Counts include headings, actions, facts, captions, status te
 | Step H3 | Open the example | 3 | — |
 | Step sentence | Use the shared Xcode project or add its UIKit capture to your app. | 13 | — |
 | Step H3 | Run VoiceOver | 2 | — |
-| Step sentence | The UI test swipes through real VoiceOver focus. | 8 | — |
-| Step sentence | The app emits the ordered stops. | 6 | — |
+| Step sentence | Move through the screen with VoiceOver. | 6 | — |
+| Step sentence | The app emits each observed stop. | 6 | — |
 | Step H3 | Review the findings | 3 | — |
 | Step sentence | Compare silent or repeated announcements with your baseline. | 8 | — |
 | Boundary H2 | Know what the check measures | 6 | — |

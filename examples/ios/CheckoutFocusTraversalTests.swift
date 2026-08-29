@@ -10,10 +10,10 @@ final class CheckoutFocusTraversalTests: XCTestCase {
         XCTAssertTrue(app.buttons["checkout.pay"].waitForExistence(timeout: 5))
         XCTAssertEqual(app.staticTexts["voiceover.status"].label, "VoiceOver enabled")
 
-        // Exercise the same next-item gesture used by VoiceOver, then activate
-        // the deterministic app-side traversal. XCUITest routes synthetic
-        // swipes differently from hardware, so the run control guarantees the
-        // public UIAccessibility focus sequence also runs on headless workers.
+        // Exercise a next-item gesture, then request the example's public
+        // UIAccessibility focus sequence. The app records only callbacks for
+        // elements that VoiceOver actually focuses. Run this on a GUI macOS
+        // host: a hosted headless Simulator may ignore these focus requests.
         app.swipeRight()
         app.buttons["capture.run"].tap()
 

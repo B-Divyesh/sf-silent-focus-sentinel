@@ -33,11 +33,13 @@ Every command runs without an account, credentials, or runtime service.
 
 Open the runnable [`SilentFocusSentinelExample.xcodeproj`](examples/ios/SilentFocusSentinelExample.xcodeproj) on a macOS host with Xcode. Enable VoiceOver in the booted Simulator before running it.
 
-The UI test performs a swipe-right gesture. A test-only bridge then uses public `UIAccessibility` focus moves because XCTest sends synthetic gestures directly to the app. VoiceOver's real cursor enters each stop, and the retained app observer emits after the traversal.
+Run the example, then use VoiceOver's next-item gesture through the checkout screen. The app listens for real focus callbacks and emits after VoiceOver reaches “End capture.” Its JSON Lines appear in the Xcode console and in the hidden UI-test relay.
+
+The included UI test starts the same screen and requests focus with public `UIAccessibility` calls. It accepts only elements that VoiceOver reports as focused. Hosted headless Simulators do not reliably move the VoiceOver cursor, so CI compiles this path but does not claim a native traversal. Run it on a GUI macOS host to collect current native evidence.
 
 Use the same integration in your app by copying [`SilentFocusSentinelVoiceOverCapture.swift`](examples/ios/SilentFocusSentinelVoiceOverCapture.swift). The runnable app lifecycle is in [`AppDelegate.swift`](examples/ios/SilentFocusSentinelExample/AppDelegate.swift). The traversal is in [`CheckoutFocusTraversalTests.swift`](examples/ios/CheckoutFocusTraversalTests.swift).
 
-The observer is not given a caller-selected element list. It records an inserted silent stop only when VoiceOver reaches it. The app serializes those observed stops, and the UI test relays each one as an `SFS_VOICEOVER_STOP:` JSON line for the CLI.
+The observer records an inserted silent stop only when VoiceOver reaches it. The app serializes those observed stops, and the UI test relays each one as an `SFS_VOICEOVER_STOP:` JSON line for the CLI.
 
 ```sh
 silent-focus-sentinel record-xctest \
