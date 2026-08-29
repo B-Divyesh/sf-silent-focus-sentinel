@@ -1,44 +1,45 @@
-# Silent Focus Sentinel verification handoff
+# Silent Focus Sentinel review handoff
 
-## Status: PASS — independent verification round 3
+## Status: FAIL — adversarial first-read review 1
 
-Candidate commit **`c41ed8e7cd0d7cae316317bd033e0bcdf4db5360`** passes independent
-QA against `https://silent-focus-sentinel.sociobot.in`. The deployed static
-files match a fresh build of that candidate byte for byte. Full evidence is in
-[`verification-3.md`](verification-3.md).
+The requested review is in `review-1.md`. Product code was not changed.
 
-## What was verified
+## What was done
 
-- Locked clean install; all 15 exact claims commands; full `npm test` (6 Rust,
-  27 Playwright); typecheck; production build; formatting; Clippy-as-errors;
-  and locked crate packaging.
-- Clean installed-consumer CLI `--help`, `demo`, JSON/HTML reports, malformed
-  input recovery, whitespace/case boundary analysis, and no-overwrite report
-  collision behavior.
-- Cold live first read, one-click sample demo, desktop and 390px mobile,
-  keyboard/focus/reduced motion, Axe, privacy request log, headers/caching,
-  bundle budgets, route/404 behavior, and live/build asset hashes.
-- Live mobile Lighthouse: 95 performance, 100 accessibility, 100 best
-  practices, 100 SEO; LCP 1,058 ms; CLS 0.
+- Captured cold live first screens at 390×844 and 1440×900 before reading repository context.
+- Exercised the one-click browser demo, sample download, reset, Start for real, seeded real-storage preservation, cookies, storage, and the complete request log.
+- Ran the CLI demo from an empty temporary directory and confirmed it wrote only to its own OS temporary directory.
+- Cloned commit `c4210f2d162b3ff0a42e74abc537b2c7aeba5495` to `/tmp/sfs-review1-clone-lob0UD`, ran `npm ci`, and ran all 15 exact `.factory/claims.json` commands separately. All exited 0.
+- Checked live route status, runtime and raw metadata, History API navigation, 404, links, mobile targets, overflow, console output, and Axe at mobile and desktop widths.
+- Audited every landing-page copy unit and every README sentence with word counts.
+- Rechecked the prior handoff limits and earlier verification regressions.
 
-## How to run
+## Result
+
+The first-read and demo gates work, but the review found 20 issues. Two are blocking:
+
+1. Public copy says the tool catches VoiceOver focus stops, while the helper measures label/value text in a caller-defined order and does not observe VoiceOver.
+2. The `xctest-capture` claim test uses a fake `xcodebuild`; it does not compile Swift or run an iOS Simulator traversal.
+
+The README also gives a false `--json` instruction. Full evidence, proposed rewrites, claim results, copy counts, and repair requirements are in `.factory/review-1.md`.
+
+## How to reproduce
 
 ```sh
 npm ci
-npm test
+npm test -- --grep @claim:<claim-id>
 npm run build
 cargo run -- demo
-cargo package --locked
 ```
 
-Install-ready package: `target/package/silent-focus-sentinel-0.1.0.crate`.
-The deployment factory, not this worker, owns publishing/deployment.
+For F-1-3:
 
-## Known limits / next steps
+```sh
+silent-focus-sentinel diff examples/baseline-trace.json examples/sample-trace.json --json
+```
 
-- A Linux worker cannot execute the real Xcode/iOS Simulator traversal. Run the
-  bundled XCTest helper in a consuming iOS project before adopting the CLI as a
-  release gate.
-- The seven-event seed confirms its intended examples but is not a broad
-  statistical validation of the 90% detection / under-10% false-positive goal.
-- `verify-url.sh` is not present; equivalent Playwright and Axe checks passed.
+This exits 2 because `--json` requires a path, contrary to the README sentence.
+
+## Work left
+
+Resolve every finding in `.factory/review-1.md`, add a real macOS/Xcode claim gate or narrow the product claim, and rerun the entire adversarial review. Deployment, infrastructure, and billing were not changed.
