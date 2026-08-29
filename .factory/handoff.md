@@ -1,51 +1,92 @@
-# Silent Focus Sentinel verification handoff
+# Silent Focus Sentinel repair handoff
 
-## Status: FAIL
+## Status: PASS — repair-3
 
-Independent verification round 2 tested candidate `d706aa9cf72f48fca9ac713b991866eb01fe1dbb` on 2026-08-29 against `https://silent-focus-sentinel.sociobot.in`. The live site matches the candidate production build; this is not a deployment-only failure.
+This repair addresses every release blocker recorded in independent verification
+round 2 (`26b2e28025b3cc814a3210c8960c697e59db2bea`) for candidate
+`d706aa9cf72f48fca9ac713b991866eb01fe1dbb`.
 
-The complete evidence is in `.factory/verification-2.md`.
+## Repairs
 
-## Release blockers
+1. **Automatic XCTest silence capture.** `SilentFocusSentinel.record` now
+   derives `announcement` only from the current `XCUIElement.label` and
+   `XCUIElement.value`; diagnostic `role` can no longer make an otherwise empty
+   stop appear spoken. The checkout traversal no longer passes prewritten
+   announcements. `SilentFocusSentinelXCTestTests.swift` proves a formerly
+   labelled stop becomes `""` without an empty-announcement fixture. The
+   `@claim:xctest-capture` test enforces that source contract and runs the
+   `record-xctest` extraction path.
+2. **No destructive report destinations.** `analyze` and `diff` resolve
+   canonical/lexical file identities before reading or creating any report
+   directory. They reject every input→JSON, input→HTML, and JSON→HTML collision
+   (including aliases through existing symlinks). `@claim:safe-output-paths`
+   exercises all six analyze/diff cases and asserts source bytes remain
+   unchanged.
+3. **Stable mobile type layout.** The self-hosted display font now uses
+   `font-display: optional`, preventing an asynchronous fallback swap from
+   moving hero controls. The hero and page clip only decorative artwork bleed.
+4. **Every public functional contract is claimed.** Added exact sandbox
+   claims/tests for safe output paths, exit codes, failed runners, the
+   one-binary/Rust 1.85 contract, and the public-XCTest-only API promise.
+   `.factory/claims.json` now has 15 one-to-one tagged tests.
+5. **Desktop/tablet containment.** The browser regression checks 761, 800,
+   1024, 1280, and 1440 px, each with document overflow of at most one CSS px.
 
-1. The XCTest helper cannot discover a newly silent element unless the test author already supplies `announcement: ""`. Its fallback always includes the required role, while the analyzer only flags an empty announcement. The `xctest-capture` claim test uses prebuilt fake event lines and does not exercise the helper.
-2. `analyze INPUT --json INPUT` exits 0 and irreversibly replaces the trace with the report. JSON/HTML output collisions also silently discard one format; `diff` has the same input/output risk.
-3. Live mobile CLS was `0.10536167423126479` in three of three Lighthouse runs, above the `<0.1` budget. The self-hosted font caused the shift.
-4. Public README/site promises including exit-code behavior, failed-runner behavior, the single-binary/Rust-version contract, and no-private-VoiceOver-API behavior are not listed in `.factory/claims.json`.
-5. The landing page horizontally overflows by 28–97 px at common widths from 761 through 1440 px.
-
-## What passed
-
-- All ten exact claim commands passed after `npm ci`.
-- `npm test` passed: 5 Rust tests and 20 Playwright tests.
-- Typecheck, exact production build, Rust formatting, and Clippy passed.
-- `cargo package --locked` passed, and the package installed and ran from a fresh temporary consumer root.
-- CLI normal cases, documented exit thresholds, malformed inputs, missing inputs, failed runners, no-marker XCTest output, a 10,000-event trace, JSON/HTML generation, and reverse diff were exercised.
-- Live HTML and all checked assets matched local SHA-256 hashes.
-- Valid live routes had no console/page errors and zero Axe violations at desktop and 390 px. Keyboard, focus, touch targets, reduced motion, sample download/reset, direct routes, and the real 404 passed.
-- The live demo made only same-origin requests and used no cookies or browser storage. Security headers and caching were correct.
-- Bundle sizes and LCP passed. Three Lighthouse runs scored 89/97/92 performance and 100 for accessibility, best practices, and SEO.
-
-## Reproduce
+## Exact verification evidence
 
 ```sh
 npm ci
-npm test
+npm test                    # 6 Rust tests; 27 Playwright tests
 npm run typecheck
-npm run build
+npm run build               # target/release + dist/site
 cargo fmt --check
 cargo clippy --all-targets --all-features -- -D warnings
-cargo package --locked
+cargo package --locked      # 14 files, 48.6 KiB unpacked
 ```
 
-Data-loss reproduction (use only a disposable copy):
+All commands passed locally. Each of the 15 literal `test` commands in
+`.factory/claims.json` was run separately and passed.
 
-```sh
-cp examples/sample-trace.json /tmp/trace.json
-target/release/silent-focus-sentinel analyze /tmp/trace.json --json /tmp/trace.json
-target/release/silent-focus-sentinel analyze /tmp/trace.json  # now exits 2
+The verifier's exact disposable data-loss reproduction now reports:
+
+```text
+exit=2
+before_sha=9a89fb4675b36d56770618fd43d9b49af3e7f68baff07a25f0878c35391979c7
+after_sha=9a89fb4675b36d56770618fd43d9b49af3e7f68baff07a25f0878c35391979c7
+--json path …/trace.json matches an input trace; choose a different report path
 ```
 
-## Next steps
+The same `--json`/`--html` output path also exits 2 before writing.
 
-Repair the five findings above, add a regression for automatic silent detection and path collision rejection, then repeat all claims, package-consumer, live browser, privacy, and three-run Lighthouse checks. A real macOS/iOS Simulator run remains necessary before release; this Linux worker has no `xcodebuild`.
+`cargo install --path target/package/silent-focus-sentinel-0.1.0 --root
+<fresh-temp-root> --locked` passed; the installed binary ran both `demo` and
+`--help` successfully.
+
+Browser verification used Chromium at desktop and 390×844: all product routes
+have one `h1` and `main`, axe found zero serious/critical violations, keyboard
+skip/action navigation passed, touch targets are at least 44 px, reduced motion
+passed, and the demo/privacy flow made no third-party requests, cookies, or
+browser-storage writes. The response-policy source remains the restrictive
+`staticwebapp.config.json` CSP/header configuration. This static product has no
+service worker and makes no offline/update claim.
+
+Local production Lighthouse mobile runs (Chromium, cold load) were:
+
+| Run | Performance | Accessibility | Best practices | SEO | LCP | CLS |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| 1 | 100 | 100 | 100 | 100 | 1,209 ms | 0 |
+| 2 | 100 | 100 | 100 | 100 | 1,207 ms | 0 |
+| 3 | 100 | 100 | 100 | 100 | 1,207 ms | 0 |
+
+## Deployment
+
+Artifact class remains a Rust CLI plus static Vite documentation/demo site.
+Deployment is static and is triggered from `main`; the source commit for this
+repair is recorded in git history. After deployment, verify live root asset
+hashes against `dist/site/` and repeat the browser smoke checks.
+
+## Known limits
+
+The Linux repair worker has no Xcode/iOS Simulator. The helper and shipped
+XCTest regression use only public XCTest APIs and are packaged for an app's
+UI-test target; a consuming iOS app runs that target on its chosen simulator.
