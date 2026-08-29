@@ -25,6 +25,9 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
         checkout.finishTraversal = { [weak self] in
             self?.capture.emitCapturedTrace()
         }
+        checkout.observeVoiceOverFocus = { [weak self] element in
+            self?.capture.captureObservedVoiceOverFocus(element)
+        }
         let window = UIWindow(frame: UIScreen.main.bounds)
         window.rootViewController = checkout
         window.makeKeyAndVisible()

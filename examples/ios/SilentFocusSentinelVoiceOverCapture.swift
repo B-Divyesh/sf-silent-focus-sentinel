@@ -58,6 +58,15 @@ final class SilentFocusSentinelVoiceOverCapture {
         lastObject = nil
     }
 
+    /// Some headless Simulator configurations do not rebroadcast the global
+    /// focus notification to the app process. Sample elements therefore also
+    /// forward UIKit's per-element focus callback here. That callback is made
+    /// by VoiceOver only after its cursor enters the element; traversal code
+    /// never calls this method directly.
+    func captureObservedVoiceOverFocus(_ element: NSObject) {
+        appendFocusedElement(element)
+    }
+
     /// Serializes the app-observed trace and hands it to the UI test through a
     /// visible accessibility value. The UI test relays these exact JSON Lines
     /// to stdout for `record-xctest`; it does not create or infer any stops.

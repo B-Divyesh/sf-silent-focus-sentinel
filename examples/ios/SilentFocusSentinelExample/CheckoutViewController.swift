@@ -1,9 +1,41 @@
 import UIKit
 
+private protocol VoiceOverFocusReporter: AnyObject {
+    var onVoiceOverFocus: ((NSObject) -> Void)? { get set }
+}
+
+private final class FocusObservedView: UIView, VoiceOverFocusReporter {
+    var onVoiceOverFocus: ((NSObject) -> Void)?
+
+    override func accessibilityElementDidBecomeFocused() {
+        super.accessibilityElementDidBecomeFocused()
+        onVoiceOverFocus?(self)
+    }
+}
+
+private final class FocusObservedLabel: UILabel, VoiceOverFocusReporter {
+    var onVoiceOverFocus: ((NSObject) -> Void)?
+
+    override func accessibilityElementDidBecomeFocused() {
+        super.accessibilityElementDidBecomeFocused()
+        onVoiceOverFocus?(self)
+    }
+}
+
+private final class FocusObservedButton: UIButton, VoiceOverFocusReporter {
+    var onVoiceOverFocus: ((NSObject) -> Void)?
+
+    override func accessibilityElementDidBecomeFocused() {
+        super.accessibilityElementDidBecomeFocused()
+        onVoiceOverFocus?(self)
+    }
+}
+
 final class CheckoutViewController: UIViewController {
     var startCapture: (() -> Void)?
     var finishTraversal: (() -> Void)?
-    private let endStop = UIView()
+    var observeVoiceOverFocus: ((NSObject) -> Void)?
+    private let endStop = FocusObservedView()
     private let payloadStop = UILabel()
     private var traversalStops: [UIView] = []
     private var traversalIndex = 0
@@ -12,7 +44,7 @@ final class CheckoutViewController: UIViewController {
         super.viewDidLoad()
         view.backgroundColor = .systemBackground
 
-        let title = UILabel()
+        let title = FocusObservedLabel()
         title.text = "Checkout"
         title.font = .preferredFont(forTextStyle: .largeTitle)
         title.accessibilityIdentifier = "checkout.title"
@@ -27,26 +59,26 @@ final class CheckoutViewController: UIViewController {
         voiceOverStatus.text = UIAccessibility.isVoiceOverRunning ? "VoiceOver enabled" : "VoiceOver disabled"
         voiceOverStatus.accessibilityIdentifier = "voiceover.status"
 
-        let address = UIButton(type: .system)
+        let address = FocusObservedButton(type: .system)
         address.setTitle("Delivery address", for: .normal)
         address.accessibilityIdentifier = "checkout.address"
         address.accessibilityValue = "14 Oak Street"
 
         // This stop is intentionally unnamed and is never queried by the UI
         // test. A real VoiceOver traversal discovers it between address/total.
-        let unnamed = UIView()
+        let unnamed = FocusObservedView()
         unnamed.isAccessibilityElement = true
         unnamed.accessibilityIdentifier = "checkout.unnamed"
 
-        let total = UILabel()
+        let total = FocusObservedLabel()
         total.text = "Total, $42.00"
         total.accessibilityIdentifier = "checkout.total"
 
-        let repeatedTotal = UILabel()
+        let repeatedTotal = FocusObservedLabel()
         repeatedTotal.text = "Total, $42.00"
         repeatedTotal.accessibilityIdentifier = "checkout.total-echo"
 
-        let pay = UIButton(type: .system)
+        let pay = FocusObservedButton(type: .system)
         pay.setTitle("Pay now", for: .normal)
         pay.accessibilityIdentifier = "checkout.pay"
 
@@ -73,6 +105,11 @@ final class CheckoutViewController: UIViewController {
         ])
 
         traversalStops = [title, address, unnamed, total, repeatedTotal, pay, endStop]
+        for case let stop as VoiceOverFocusReporter in traversalStops {
+            stop.onVoiceOverFocus = { [weak self] element in
+                self?.observeVoiceOverFocus?(element)
+            }
+        }
         if ProcessInfo.processInfo.arguments.contains(SilentFocusSentinelVoiceOverCapture.launchArgument) {
             // XCUITest's synthetic swipe is delivered to the app instead of
             // VoiceOver's system gesture recognizer. This test-only bridge
