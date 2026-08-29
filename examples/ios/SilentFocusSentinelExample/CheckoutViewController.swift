@@ -62,7 +62,7 @@ final class CheckoutViewController: UIViewController {
             // XCUITest's synthetic swipe is delivered to the app instead of
             // VoiceOver's system gesture recognizer. This test-only bridge
             // converts each scripted swipe into a public VoiceOver focus move.
-            let nextItem = UISwipeGestureRecognizer(target: self, action: #selector(advanceVoiceOverFocus))
+            let nextItem = UISwipeGestureRecognizer(target: self, action: #selector(startVoiceOverTraversal))
             nextItem.direction = .right
             view.addGestureRecognizer(nextItem)
         }
@@ -73,13 +73,21 @@ final class CheckoutViewController: UIViewController {
         startCapture?()
     }
 
-    @objc private func advanceVoiceOverFocus() {
+    @objc private func startVoiceOverTraversal() {
+        guard traversalIndex == 0 else { return }
+        advanceVoiceOverFocus()
+    }
+
+    private func advanceVoiceOverFocus() {
         guard traversalIndex < traversalStops.count else { return }
         let stop = traversalStops[traversalIndex]
         traversalIndex += 1
         UIAccessibility.post(notification: .layoutChanged, argument: stop)
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { [weak self] in
             self?.captureCurrentFocus?()
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.9) { [weak self] in
+            self?.advanceVoiceOverFocus()
         }
     }
 
