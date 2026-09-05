@@ -1,10 +1,14 @@
-# Silent Focus Sentinel repair-5 handoff
+# Silent Focus Sentinel verification-6 handoff
 
 ## Status
 
-The three verification-5 defects are repaired at source commit
-`99f9569a26c6a41ff790a9e7814cd4e9de394d1f`. The product remains a Rust CLI
-with a static Vite documentation site in `dist/site/`.
+Product candidate reviewed: `f26280e25696bbd6771a500741c1eca1b5fcca84`.
+This is a Rust CLI with a static Vite documentation site in `dist/site/`.
+
+Verdict: **FAIL**. All local, package, live-site, and declared-claim checks
+passed, but a fresh GUI macOS Simulator VoiceOver traversal was not possible
+in this Linux verifier. The public app-side capture claim therefore remains
+untested at runtime; see `.factory/verification-6.md` (V6-01).
 
 ## Repairs
 
@@ -120,3 +124,13 @@ cargo run -- demo
 
 The site artifact is `dist/site/`; the CLI is
 `target/release/silent-focus-sentinel`.
+
+## Verification 6
+
+The verifier used a fresh clone of `f26280e`, ran `npm ci && npm test`, every
+literal command in `.factory/claims.json`, `npm run build`, `cargo fmt --check`,
+Clippy, `cargo package --locked`, and an installed-package demo/analyze run in
+a separate consumer root. The live site passed `npm run verify:live` and a
+Lighthouse mobile audit at 100/100/100/100. See
+`.factory/verification-6.md` for the complete evidence and the one remaining
+runtime-native verification step.
