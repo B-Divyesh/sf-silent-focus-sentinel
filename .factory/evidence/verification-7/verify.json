@@ -1,0 +1,14 @@
+{
+  "url": "https://silent-focus-sentinel.sociobot.in",
+  "loadMs": 783,
+  "errors": [],
+  "a11y": {
+    "title": "Silent Focus Sentinel — catch silent VoiceOver stops",
+    "lang": "en",
+    "h1": 1,
+    "main": true,
+    "imgsMissingAlt": 0,
+    "buttonsUnlabeled": 0,
+    "textLength": 2114
+  }
+}

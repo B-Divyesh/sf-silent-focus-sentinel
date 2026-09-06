@@ -1,14 +1,16 @@
-# Silent Focus Sentinel verification-6 handoff
+# Silent Focus Sentinel verification-7 handoff
 
 ## Status
 
-Product candidate reviewed: `f26280e25696bbd6771a500741c1eca1b5fcca84`.
-This is a Rust CLI with a static Vite documentation site in `dist/site/`.
+Implementation candidate: `f26280e25696bbd6771a500741c1eca1b5fcca84`.
+The previous documentation-only commit is
+`35fa41856fe9fd9851711482680d93a208fdcef6`. This is a Rust CLI with a static
+Vite documentation site in `dist/site/`.
 
 Verdict: **FAIL**. All local, package, live-site, and declared-claim checks
-passed, but a fresh GUI macOS Simulator VoiceOver traversal was not possible
-in this Linux verifier. The public app-side capture claim therefore remains
-untested at runtime; see `.factory/verification-6.md` (V6-01).
+pass, but a fresh GUI macOS Simulator VoiceOver traversal is unavailable in
+this Linux verifier. The public app-side capture claim therefore remains
+untested at runtime; see `.factory/verification-7.md` (V7-01).
 
 ## Repairs
 
@@ -39,7 +41,8 @@ untested at runtime; see `.factory/verification-6.md` (V6-01).
 
 ## Clean verification evidence
 
-From clean clone `/tmp/sfs-repair5-clean-cE2TN7` at `99f9569`:
+Verification 7 reran the product from clean clone
+`/tmp/sfs-repair6-clean-03r4Uj` at `35fa418`:
 
 ```sh
 npm ci && npm test && npm run build
@@ -49,10 +52,9 @@ npm ci && npm test && npm run build
 - `npm test`: 9 Rust tests and 41 Playwright tests passed.
 - `npm run build`: passed; produced the release binary and `dist/site/`.
 - Every one of the 25 literal test commands in `.factory/claims.json` was run
-  separately from that clone; all passed.
-- Focused repair command
-  `npm test -- --grep '@claim:(safe-output-paths|public-xctest-helper|accuracy-suite)'`
-  passed all three selected regressions plus the Rust suite.
+  separately from that clone; all passed. An immediate first attempt after the
+  full suite met a brief local port-4173 teardown overlap. A clean sequential
+  sweep passed all 25 and is the recorded claim result.
 - `npm run typecheck`, `cargo fmt --check`, and
   `cargo clippy --all-targets --all-features -- -D warnings` passed.
 - `cargo package --locked` passed: 25 files, 95.0 KiB unpacked and 25.8 KiB
@@ -93,11 +95,9 @@ ledger remains required.
 
 ## Deployment and live checks
 
-At 2026-08-29T10:17:03Z, the clean `dist/site/` artifact was uploaded with
-Azure Static Web Apps CLI 2.0.10 to the existing production environment for
-`sf-silent-focus-sentinel`. No infrastructure or DNS was changed. Azure
-reported the production host
-`orange-plant-05a460110.7.azurestaticapps.net`; the custom domain is
+No product deployment was required in verification 7: the implementation has
+not changed since the deployed candidate. Fresh local production bytes still
+match the live root, demo, JavaScript, and CSS. The current custom domain is
 <https://silent-focus-sentinel.sociobot.in>.
 
 - `npm run verify:live -- https://silent-focus-sentinel.sociobot.in`: six
@@ -105,13 +105,14 @@ reported the production host
 - Factory `verify-url.sh`: HTTPS 200, title present, `lang=en`, one h1, one
   main, all image alt text present, no unlabeled buttons, and no console
   errors.
-- Root, demo, privacy, terms, 404, JS, CSS, font, icons, image assets,
-  terminal recording, robots, and sitemap matched the local production files
-  byte for byte. Root SHA-256:
+- This verification freshly matched the root and demo documents plus JavaScript
+  and CSS to local production files byte for byte. Root SHA-256:
   `e3bdd49939a21e17b1fe30e7d8544d94ed79e3d27c6fffd45b23d912b83e2e22`.
+- Factory `verify-url.sh`: HTTPS 200, title present, `lang=en`, one h1, one
+  main, all image alt text present, no unlabeled buttons, and no console
+  errors. Evidence is in `.factory/evidence/verification-7/`.
 - Lighthouse 13 mobile: Performance 100, Accessibility 100, Best Practices
-  100, SEO 100; FCP 904 ms, LCP 979 ms, TBT 10.5 ms, CLS 0, transfer 58,992
-  bytes.
+  100, SEO 100; FCP 0.9 s, LCP 1.0 s, TBT 10 ms, CLS 0, transfer 58 KiB.
 
 ## Run and verify
 
@@ -125,12 +126,12 @@ cargo run -- demo
 The site artifact is `dist/site/`; the CLI is
 `target/release/silent-focus-sentinel`.
 
-## Verification 6
+## Verification 7
 
-The verifier used a fresh clone of `f26280e`, ran `npm ci && npm test`, every
+The verifier used a fresh clone of `35fa418`, ran `npm ci && npm test`, every
 literal command in `.factory/claims.json`, `npm run build`, `cargo fmt --check`,
 Clippy, `cargo package --locked`, and an installed-package demo/analyze run in
-a separate consumer root. The live site passed `npm run verify:live` and a
-Lighthouse mobile audit at 100/100/100/100. See
-`.factory/verification-6.md` for the complete evidence and the one remaining
-runtime-native verification step.
+a separate consumer root. The live site passed `npm run verify:live`, factory
+`verify-url.sh`, fresh phone/desktop demo checks, and a Lighthouse mobile audit
+at 100/100/100/100. See `.factory/verification-7.md` for the complete evidence
+and the one remaining runtime-native verification step.
