@@ -4,8 +4,9 @@
 
 Implementation candidate: `f26280e25696bbd6771a500741c1eca1b5fcca84`.
 The previous documentation-only commit is
-`35fa41856fe9fd9851711482680d93a208fdcef6`. This is a Rust CLI with a static
-Vite documentation site in `dist/site/`.
+`35fa41856fe9fd9851711482680d93a208fdcef6`; the verification-7 evidence is
+documentation commit `5dbc528`. This is a Rust CLI with a static Vite
+documentation site in `dist/site/`.
 
 Verdict: **FAIL**. All local, package, live-site, and declared-claim checks
 pass, but a fresh GUI macOS Simulator VoiceOver traversal is unavailable in
